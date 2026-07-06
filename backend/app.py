@@ -4,7 +4,13 @@ from flask_cors import CORS
 from config import Config
 from database import db, migrate
 
+# Import models so Flask-Migrate discovers them
 from models import Contract
+
+# Register routes
+from routes.contracts import contracts_bp
+from routes.ingestion import ingestion_bp
+
 
 def create_app():
 
@@ -17,11 +23,24 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
+    # Register Blueprints
+    app.register_blueprint(contracts_bp)
+    app.register_blueprint(ingestion_bp)
+
     @app.route("/")
+    def root():
+
+        return {
+            "application": "Athena Bid Intelligence System",
+            "status": "running",
+            "version": "0.1.0"
+        }
+
+    @app.route("/health")
     def health():
 
         return {
-            "status": "Athena Backend Running"
+            "status": "healthy"
         }
 
     return app
