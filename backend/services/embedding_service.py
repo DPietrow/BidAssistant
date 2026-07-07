@@ -39,6 +39,19 @@ class EmbeddingService:
         )
 
         return response.data[0].embedding
+    
+    # --------------------------------------------------------
+
+    
+    def embed_query(
+        self,
+        query: str
+    ) -> list[float]:
+
+
+        return self.create_embedding(
+            query
+        )
 
     # --------------------------------------------------------
 

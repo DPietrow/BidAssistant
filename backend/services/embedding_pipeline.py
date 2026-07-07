@@ -1,197 +1,223 @@
-from datetime import datetime
 import logging
+from datetime import datetime
 
 from database import db
 
-from models import (
-    Contract,
-    ContractChunk,
-    ContractEmbedding
-)
+from models import Contract, ContractChunk, ContractEmbedding
 
 from services.chunking_service import chunking_service
 from services.embedding_service import embedding_service
+
 
 logger = logging.getLogger(__name__)
 
 
 class EmbeddingPipeline:
 
-    # =====================================================
-    # PUBLIC ENTRY POINT
-    # =====================================================
+    def process_pending(self, batch_size=25):
 
-    def process_pending(self, batch_size: int = 25):
-
-        pending_contracts = (
+        contracts = (
             Contract.query
             .filter(
                 Contract.embedding_status.in_(
-                    ["pending", "failed"]
+                    [
+                        "pending",
+                        "failed"
+                    ]
                 )
             )
-            .order_by(Contract.posted_date.desc())
             .limit(batch_size)
             .all()
         )
 
-        summary = {
 
+        results = {
             "processed": 0,
-            "successful": 0,
+            "success": 0,
             "failed": 0
-
         }
 
-        logger.info(
-            "Found %s contracts to process.",
-            len(pending_contracts)
-        )
 
-        for contract in pending_contracts:
+        for contract in contracts:
 
-            summary["processed"] += 1
+            results["processed"] += 1
 
             try:
 
                 self.embed_contract(contract)
 
-                summary["successful"] += 1
+                results["success"] += 1
 
-            except Exception as ex:
+
+            except Exception as e:
 
                 logger.exception(
-                    "Embedding failed for %s",
+                    "Embedding failed %s",
                     contract.sam_id
                 )
 
-                db.session.rollback()
+                self.mark_failed(
+                    contract,
+                    e
+                )
 
-                contract.embedding_status = "failed"
-                contract.embedding_error = str(ex)
-                contract.embedding_attempts += 1
+                results["failed"] += 1
 
-                db.session.commit()
 
-                summary["failed"] += 1
+        return results
 
-        return summary
 
-    # =====================================================
-    # EMBED SINGLE CONTRACT
-    # =====================================================
 
     def embed_contract(self, contract):
 
         logger.info(
-            "Embedding %s",
+            "Starting embedding %s",
             contract.sam_id
         )
 
-        start_time = datetime.utcnow()
+
+        start = datetime.utcnow()
+
 
         #
-        # Begin pipeline
+        # Mark processing
         #
 
         contract.embedding_status = "processing"
 
-        #
-        # Delete previous chunks.
-        #
-        # Embeddings cascade automatically.
-        #
+        db.session.commit()
 
-        ContractChunk.query.filter_by(
-            contract_id=contract.id
-        ).delete()
 
         #
-        # Build chunks
+        # STEP 1
+        # Chunk in memory
         #
 
-        chunks = chunking_service.chunk_contract(contract)
-
-        contract.chunk_count = len(chunks)
-
-        #
-        # Process each chunk
-        #
-
-        self._process_chunks(
-            contract,
-            chunks
+        chunks = chunking_service.chunk_contract(
+            contract
         )
 
+
+        logger.info(
+            "%s generated %s chunks",
+            contract.sam_id,
+            len(chunks)
+        )
+
+
+
         #
-        # Final metadata
+        # STEP 2
+        # Generate embeddings
+        #
+        # No database interaction here
+        #
+
+        embedded_chunks = []
+
+
+        for index, text in enumerate(chunks):
+
+            vector = (
+                embedding_service
+                .create_embedding(text)
+            )
+
+
+            embedded_chunks.append({
+
+                "index": index,
+
+                "text": text,
+
+                "tokens": len(text.split()),
+
+                "vector": vector
+
+            })
+
+
+
+        #
+        # STEP 3
+        # Short DB transaction
+        #
+
+        self.persist_embeddings(
+            contract,
+            embedded_chunks
+        )
+
+
+        #
+        # Metadata
         #
 
         contract.embedding_status = "completed"
 
-        contract.embedding_model = embedding_service.model
+        contract.chunk_count = len(
+            embedded_chunks
+        )
+
+        contract.embedding_model = (
+            embedding_service.model
+        )
 
         contract.embedded_at = datetime.utcnow()
 
         contract.processing_time_ms = int(
 
             (
-                datetime.utcnow() - start_time
-            ).total_seconds() * 1000
+                datetime.utcnow() - start
+            )
+            .total_seconds()
+            *
+            1000
 
         )
+
 
         db.session.commit()
 
-        logger.info(
-            "Finished %s (%s chunks)",
-            contract.sam_id,
-            len(chunks)
-        )
 
-    # =====================================================
-    # PROCESS CHUNKS
-    # =====================================================
 
-    def _process_chunks(
+    def persist_embeddings(
         self,
         contract,
         chunks
     ):
 
-        for index, chunk_text in enumerate(chunks):
+        #
+        # Remove previous embeddings
+        #
 
-            #
-            # Create DB chunk
-            #
+        ContractChunk.query.filter_by(
+            contract_id=contract.id
+        ).delete()
+
+
+
+        for item in chunks:
+
 
             chunk = ContractChunk(
 
                 contract_id=contract.id,
 
-                chunk_index=index,
+                chunk_index=item["index"],
 
-                chunk_text=chunk_text,
+                chunk_text=item["text"],
 
-                token_count=len(chunk_text.split())
+                token_count=item["tokens"]
 
             )
+
 
             db.session.add(chunk)
 
-            #
-            # Flush so chunk.id exists
-            #
-
             db.session.flush()
 
-            #
-            # Generate embedding
-            #
 
-            vector = embedding_service.create_embedding(
-                chunk_text
-            )
 
             embedding = ContractEmbedding(
 
@@ -199,13 +225,37 @@ class EmbeddingPipeline:
 
                 model=embedding_service.model,
 
-                dimensions=len(vector),
+                dimensions=len(
+                    item["vector"]
+                ),
 
-                embedding=vector
+                embedding=item["vector"]
 
             )
 
-            db.session.add(embedding)
+
+            db.session.add(
+                embedding
+            )
+
+
+
+    def mark_failed(
+        self,
+        contract,
+        error
+    ):
+
+        db.session.rollback()
+
+
+        contract.embedding_status = "failed"
+
+        contract.embedding_error = str(error)
+
+
+        db.session.commit()
+
 
 
 embedding_pipeline = EmbeddingPipeline()

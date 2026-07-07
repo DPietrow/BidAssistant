@@ -57,16 +57,12 @@ class ContractChunk(db.Model):
     #
     contract = db.relationship(
         "Contract",
-        backref=db.backref(
-            "chunks",
-            lazy=True,
-            cascade="all, delete-orphan",
-        ),
+        back_populates="chunks"
     )
-
+    
     embedding = db.relationship(
         "ContractEmbedding",
-        backref="chunk",
+        back_populates="chunk",
         uselist=False,
         cascade="all, delete-orphan"
     )

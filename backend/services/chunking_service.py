@@ -1,144 +1,115 @@
 import re
-from typing import List
 
 
 class ChunkingService:
 
+
     def __init__(
         self,
-        chunk_size: int = 1200,
-        overlap: int = 200,
+        chunk_size=500,
+        overlap=100
     ):
-
-        if overlap >= chunk_size:
-            raise ValueError(
-                "overlap must be smaller than chunk_size"
-            )
 
         self.chunk_size = chunk_size
         self.overlap = overlap
 
 
-    def normalize(self, text: str) -> str:
 
-        if not text:
-            return ""
+    def chunk_contract(
+        self,
+        contract
+    ):
 
-        text = text.replace("\r\n", "\n")
+        text = self.create_contract_text(
+            contract
+        )
 
-        # remove trailing whitespace
-        text = re.sub(r"[ \t]+", " ", text)
-
-        # collapse excessive blank lines
-        text = re.sub(r"\n{3,}", "\n\n", text)
-
-        return text.strip()
-
-
-    def split_paragraphs(self, text: str):
-
-        return [
-            p.strip()
-            for p in text.split("\n\n")
-            if p.strip()
-        ]
-
-    
-
-    def split_sentences(self, paragraph: str):
-
-        return re.split(
-            r'(?<=[.!?])\s+',
-            paragraph
+        return self.chunk_text(
+            text
         )
 
 
-    def chunk(self, text: str) -> List[str]:
 
-        text = self.normalize(text)
+    def create_contract_text(
+        self,
+        contract
+    ):
 
-        if not text:
-            return []
 
-        paragraphs = self.split_paragraphs(text)
+        sections = [
+
+            f"Title:\n{contract.title}",
+
+            f"Agency:\n{contract.agency}",
+
+            f"Office:\n{contract.office}",
+
+            f"Description:\n{contract.description}",
+
+            f"Solicitation:\n{contract.solicitation_number}",
+
+            f"NAICS:\n{contract.naics}",
+
+            f"PSC Code:\n{contract.psc_code}",
+
+            f"Notice Type:\n{contract.notice_type}",
+
+            f"Set Aside:\n{contract.set_aside}",
+
+            f"Additional Details:\n{contract.raw_text}"
+
+        ]
+
+
+        return "\n\n".join(
+
+            section
+
+            for section in sections
+
+            if section and "None" not in section
+
+        )
+
+
+
+    def chunk_text(
+        self,
+        text
+    ):
+ 
+
+        words = text.split()
+
 
         chunks = []
 
-        current = ""
 
-        for paragraph in paragraphs:
+        start = 0
 
-            #
-            # Paragraph fits
-            #
 
-            if len(current) + len(paragraph) + 2 <= self.chunk_size:
+        while start < len(words):
 
-                if current:
-                    current += "\n\n"
+            end = start + self.chunk_size
 
-                current += paragraph
-                continue
 
-            #
-            # Flush current chunk
-            #
+            chunk = words[start:end]
 
-            if current:
 
-                chunks.append(current)
+            chunks.append(
+                " ".join(chunk)
+            )
 
-                overlap_text = current[-self.overlap:]
 
-                current = overlap_text + "\n\n"
+            start += (
+                self.chunk_size
+                -
+                self.overlap
+            )
 
-            #
-            # Paragraph itself too large
-            #
-
-            if len(paragraph) > self.chunk_size:
-
-                sentences = self.split_sentences(paragraph)
-
-                for sentence in sentences:
-
-                    if len(current) + len(sentence) + 1 <= self.chunk_size:
-
-                        current += " " + sentence
-
-                    else:
-
-                        chunks.append(current.strip())
-
-                        overlap_text = current[-self.overlap:]
-
-                        current = overlap_text + " " + sentence
-
-            else:
-
-                current += paragraph
-
-        if current.strip():
-
-            chunks.append(current.strip())
 
         return chunks
 
-
-    def enumerate_chunks(self, text: str):
-
-        chunks = self.chunk(text)
-
-        return [
-
-            {
-                "chunk_index": i,
-                "chunk_text": chunk
-            }
-
-            for i, chunk in enumerate(chunks)
-
-        ]
 
 
 chunking_service = ChunkingService()

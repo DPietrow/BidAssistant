@@ -10,7 +10,8 @@ from models import Contract
 # Register routes
 from routes.contracts import contracts_bp
 from routes.ingestion import ingestion_bp
-
+from routes.search import search_bp
+from routes.embeddings import embedding_bp
 
 def create_app():
 
@@ -26,6 +27,8 @@ def create_app():
     # Register Blueprints
     app.register_blueprint(contracts_bp)
     app.register_blueprint(ingestion_bp)
+    app.register_blueprint(search_bp)
+    app.register_blueprint(embedding_bp)
 
     @app.route("/")
     def root():
