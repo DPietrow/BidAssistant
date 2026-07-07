@@ -74,6 +74,19 @@ class Contract(db.Model):
         default=1
     )
 
+    embedding_status = db.Column(
+        db.String(25),
+        default="pending"
+    )
+
+    embedded_at = db.Column(
+        db.DateTime
+    )
+
+    embedding_error = db.Column(
+        db.Text
+    )
+
     # Added later
 
     bid_score = db.Column(db.Float)
@@ -103,5 +116,6 @@ class Contract(db.Model):
     chunks = db.relationship(
         "ContractChunk",
         back_populates="contract",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        lazy=True
     )

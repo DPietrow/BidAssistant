@@ -63,3 +63,10 @@ class ContractChunk(db.Model):
             cascade="all, delete-orphan",
         ),
     )
+
+    embedding = db.relationship(
+        "ContractEmbedding",
+        backref="chunk",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
