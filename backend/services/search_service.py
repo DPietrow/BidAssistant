@@ -80,21 +80,34 @@ class SearchService:
 
                 "rank": rank,
 
-
                 "retrieval_score":
                     round(
                         result["fusion_score"],
                         5
                     ),
 
-
-                "match_type":
-                    self.get_match_type(
+                "semantic_score":
+                    round(
                         semantic_score,
-                        keyword_score
+                        4
                     ),
 
+                "keyword_score":
+                    round(
+                        keyword_score,
+                        4
+                    ),
 
+                "match_type":
+                    result.get(
+                        "match_type"
+                    ),
+
+                "keyword_match_type":
+                     result.get(
+                         "keyword_match_type"
+                     ),
+                    
                 "confidence":
                     self.get_confidence(
                         result["fusion_score"]
@@ -129,27 +142,12 @@ class SearchService:
                         else None,
 
 
-                    "matched_text":
+                     "matched_text":
                          match.get("chunk_text")
                          if match
-                         else (
-                             f"Exact identifier match: "
-                             f"{result['sam_id']}"
-                         ),
-
-
-                    "semantic_score":
-                        round(
-                            semantic_score,
-                            4
-                        ),
-
-
-                    "keyword_score":
-                        round(
-                            keyword_score,
-                            4
-                        )
+                         else self.get_keyword_match_text(
+                             result
+                         )
 
                 }
 
@@ -160,78 +158,85 @@ class SearchService:
 
 
 
-    def get_match_type(
+    def get_keyword_match_text(
         self,
-        semantic_score,
-        keyword_score
+        result
     ):
 
-
-        #
-        # Exact SAM ID / solicitation match
-        #
-
-        if keyword_score >= 0.95:
-
-            return "exact_identifier"
+        match_type = result.get(
+            "keyword_match_type"
+        )
 
 
+        if match_type == "exact_identifier":
 
-        #
-        # Both retrieval systems agree
-        #
-
-        if (
-            semantic_score > 0
-            and
-            keyword_score > 0
-        ):
-
-            return "hybrid"
+            return (
+                f"Exact identifier match: "
+                f"{result['sam_id']}"
+            )
 
 
+        if match_type == "title_match":
 
-        #
-        # Embedding similarity only
-        #
-
-        if semantic_score > 0:
-
-            return "semantic"
+            return (
+                f"Title match: "
+                f"{result['title']}"
+            )
 
 
+        if match_type == "naics_match":
 
-        #
-        # PostgreSQL full text only
-        #
+            return (
+                f"NAICS match: "
+                f"{result.get('naics')}"
+            )
 
-        if keyword_score > 0:
 
-            return "keyword"
+        if match_type == "full_text":
+
+            return (
+                "Full text keyword match"
+            )
+
+
+        return None
 
 
 
-        return "unknown"
-
-
-
-    def get_confidence(
-        self,
-        score
-    ):
-
-        if score >= 0.70:
+    def get_confidence(self, score, match_type=None):
+    
+        if match_type == "hybrid":
+        
+            if score >= .80:
+                return "very_high"
+    
             return "high"
-
-
-        if score >= 0.50:
+    
+    
+        if match_type == "exact_identifier":
+        
+            return "very_high"
+    
+    
+        if match_type in [
+            "title_match",
+            "naics_match"
+        ]:
+    
+            if score >= .75:
+                return "high"
+    
             return "medium"
-
-
-        if score >= 0.35:
+    
+    
+        if score >= .70:
+            return "medium"
+    
+    
+        if score >= .45:
             return "low"
-
-
+    
+    
         return "very_low"
 
 

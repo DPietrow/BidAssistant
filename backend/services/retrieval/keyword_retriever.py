@@ -3,7 +3,6 @@ from sqlalchemy import text
 from database import db
 
 
-
 class KeywordRetriever:
 
 
@@ -16,6 +15,7 @@ class KeywordRetriever:
 
         sql = text(
         """
+
         WITH ranked AS (
 
             SELECT
@@ -33,59 +33,135 @@ class KeywordRetriever:
 
                 CASE
 
-                    WHEN c.sam_id ILIKE :exact
+
+                    -- Exact identifiers
+
+                    WHEN c.sam_id = :query
                     THEN 1.0
 
 
-                    WHEN c.solicitation_number ILIKE :exact
+                    WHEN c.solicitation_number = :query
                     THEN 1.0
 
 
-                    WHEN c.psc_code ILIKE :exact
-                    THEN 0.9
+                    WHEN c.psc_code = :query
+                    THEN 0.95
 
 
-                    ELSE ts_rank(
+
+                    -- Metadata boosts
+
+                    WHEN c.title ILIKE '%' || :query || '%'
+                    THEN 0.85
+
+
+                    WHEN c.naics = :query
+                    THEN 0.80
+
+
+
+                    -- Full text
+
+                    ELSE ts_rank_cd(
+
                         c.search_vector,
+
                         websearch_to_tsquery(
+
                             'english',
+
                             :query
+
                         )
+
                     )
 
-                END AS keyword_score
+
+                END AS keyword_score,
+
+
+
+                CASE
+
+
+                    WHEN c.sam_id = :query
+
+                    OR c.solicitation_number = :query
+
+                    OR c.psc_code = :query
+
+                    THEN 'exact_identifier'
+
+
+
+                    WHEN c.title ILIKE '%' || :query || '%'
+
+                    THEN 'title_match'
+
+
+
+                    WHEN c.naics = :query
+
+                    THEN 'naics_match'
+
+
+
+                    ELSE 'full_text'
+
+
+                END AS keyword_match_type
+
 
 
             FROM contracts c
 
 
+
             WHERE
 
 
-                c.sam_id ILIKE :exact
+                c.sam_id = :query
 
-                OR
+                OR c.solicitation_number = :query
 
-                c.solicitation_number ILIKE :exact
+                OR c.psc_code = :query
 
-                OR
 
-                c.search_vector @@ websearch_to_tsquery(
+                OR c.title ILIKE '%' || :query || '%'
+
+
+                OR c.naics = :query
+
+
+                OR c.search_vector @@ websearch_to_tsquery(
+
                     'english',
+
                     :query
+
                 )
 
 
         )
 
 
+
         SELECT *
 
         FROM ranked
 
+
+
+        WHERE keyword_score > 0
+
+
+
         ORDER BY keyword_score DESC
 
+
+
         LIMIT :limit
+
 
         """
         )
@@ -94,36 +170,56 @@ class KeywordRetriever:
         rows = db.session.execute(
             sql,
             {
-                "query": query,
-
-                "exact": f"%{query}%",
+                "query": query.strip(),
 
                 "limit": limit
             }
         )
 
 
+
         results = []
 
 
+
         for row in rows:
+
+
+            print(
+                row._mapping
+            )
+
 
             results.append({
 
                 "contract_id":
                     row.contract_id,
 
+
                 "sam_id":
                     row.sam_id,
+
 
                 "title":
                     row.title,
 
+
                 "agency":
                     row.agency,
 
+
+                "naics":
+                    row.naics,
+
+
                 "keyword_score":
-                    float(row.keyword_score)
+                    float(
+                        row.keyword_score
+                    ),
+
+
+                "keyword_match_type":
+                    row.keyword_match_type
 
             })
 
