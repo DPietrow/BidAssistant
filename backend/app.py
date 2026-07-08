@@ -12,6 +12,8 @@ from routes.contracts import contracts_bp
 from routes.ingestion import ingestion_bp
 from routes.search import search_bp
 from routes.embeddings import embedding_bp
+from routes.test_search import test_search_bp
+
 
 def create_app():
 
@@ -29,6 +31,7 @@ def create_app():
     app.register_blueprint(ingestion_bp)
     app.register_blueprint(search_bp)
     app.register_blueprint(embedding_bp)
+    app.register_blueprint(test_search_bp)
 
     @app.route("/")
     def root():

@@ -1,5 +1,6 @@
 from database import db
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import TSVECTOR
 
 
 class Contract(db.Model):
@@ -85,6 +86,10 @@ class Contract(db.Model):
 
     embedding_error = db.Column(
         db.Text
+    )
+
+    search_vector = db.Column(
+        TSVECTOR
     )
 
     # Added later
