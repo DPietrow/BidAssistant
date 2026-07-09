@@ -1,12 +1,23 @@
+import { useState } from "react";
+
 import {
-    ExternalLink
+    ExternalLink,
+    CheckCircle2
 } from "lucide-react";
 
 
 function ContractCard({
+
     contract,
-    onSelect
+
+    onSelect,
+
+    selected
+
 }) {
+
+
+    const [hover,setHover] = useState(false);
 
 
     return (
@@ -17,76 +28,205 @@ function ContractCard({
                 onSelect(contract)
             }
 
-
             style={{
 
-                background:"white",
+                position:"relative",
 
-                borderRadius:"12px",
+                background:
+                    selected
+                    ? "#eff6ff"
+                    : "white",
+
+                border:
+                    selected
+                    ? "2px solid #2563eb"
+                    : hover
+                        ? "2px solid #d1d5db"
+                        : "2px solid transparent",
+
+                borderRadius:"14px",
 
                 padding:"20px",
 
                 cursor:"pointer",
 
-                boxShadow:
-                "0 2px 8px rgba(0,0,0,.08)",
+                transition:"all .18s ease",
 
-                transition:
-                "transform .2s"
+                transform:
+                    hover
+                    ? "translateY(-2px)"
+                    : "translateY(0)",
+
+                boxShadow:
+                    selected
+                    ? "0 8px 18px rgba(37,99,235,.18)"
+                    : hover
+                        ? "0 6px 14px rgba(0,0,0,.10)"
+                        : "0 2px 8px rgba(0,0,0,.08)"
 
             }}
+
+            onMouseEnter={() =>
+                setHover(true)
+            }
+
+            onMouseLeave={() =>
+                setHover(false)
+            }
 
         >
 
 
-            <h3>
+            {/* Selection Accent */}
 
-                {contract.title}
+            {
 
-            </h3>
+                selected &&
+
+                <div
+
+                    style={{
+
+                        position:"absolute",
+
+                        left:0,
+
+                        top:0,
+
+                        bottom:0,
+
+                        width:"6px",
+
+                        background:"#2563eb",
+
+                        borderRadius:
+                            "14px 0 0 14px"
+
+                    }}
+
+                />
+
+            }
 
 
-            <p>
 
-                <strong>
-                    Agency:
-                </strong>
+            {/* Header */}
 
-                {" "}
+            <div
 
-                {contract.agency}
+                style={{
 
-            </p>
+                    display:"flex",
+
+                    justifyContent:"space-between",
+
+                    alignItems:"flex-start",
+
+                    marginBottom:"14px"
+
+                }}
+
+            >
+
+                <h3
+
+                    style={{
+
+                        margin:0,
+
+                        color:"#111827",
+
+                        fontSize:"1.15rem"
+
+                    }}
+
+                >
+
+                    {contract.title}
+
+                </h3>
 
 
-            <p>
+                {
 
-                <strong>
-                    SAM ID:
-                </strong>
+                    selected &&
 
-                {" "}
+                    <CheckCircle2
 
-                {contract.sam_id}
+                        color="#2563eb"
 
-            </p>
+                        size={22}
+
+                    />
+
+                }
+
+            </div>
 
 
-            <p>
 
-                <strong>
-                    NAICS:
-                </strong>
 
-                {" "}
+            <div
 
-                {contract.naics}
+                style={{
 
-            </p>
+                    display:"grid",
+
+                    rowGap:"8px",
+
+                    color:"#374151",
+
+                    fontSize:".95rem"
+
+                }}
+
+            >
+
+                <div>
+
+                    <strong>
+                        Agency:
+                    </strong>
+
+                    {" "}
+
+                    {contract.agency}
+
+                </div>
+
+
+                <div>
+
+                    <strong>
+                        SAM ID:
+                    </strong>
+
+                    {" "}
+
+                    {contract.sam_id}
+
+                </div>
+
+
+                <div>
+
+                    <strong>
+                        NAICS:
+                    </strong>
+
+                    {" "}
+
+                    {contract.naics}
+
+                </div>
+
+            </div>
+
 
 
 
             {
+
                 contract.url &&
 
                 <a
@@ -104,11 +244,19 @@ function ContractCard({
 
                     style={{
 
-                        display:"flex",
+                        display:"inline-flex",
 
                         alignItems:"center",
 
-                        gap:"6px"
+                        gap:"6px",
+
+                        marginTop:"18px",
+
+                        color:"#2563eb",
+
+                        textDecoration:"none",
+
+                        fontWeight:500
 
                     }}
 
@@ -116,19 +264,16 @@ function ContractCard({
 
                     View Posting
 
-                    <ExternalLink size={14}/>
-
+                    <ExternalLink size={15}/>
 
                 </a>
 
             }
 
-
         </div>
 
-    )
+    );
 
 }
-
 
 export default ContractCard;

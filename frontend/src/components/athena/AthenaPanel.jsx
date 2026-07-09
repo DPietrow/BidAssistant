@@ -2,14 +2,15 @@ import {
     theme
 } from "../../theme";
 
-import { useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Rnd } from "react-rnd";
 import { Send, X } from "lucide-react";
 
 
 function AthenaPanel({
     onClose,
-    searchResults
+    searchResults,
+    selectedContracts
 }) {
 
 
@@ -26,7 +27,89 @@ function AthenaPanel({
 
     const [loading,setLoading] = useState(false);
 
+    const lastContractRef = useRef(null);
 
+   useEffect(() => {
+
+        if(
+            !selectedContracts ||
+            selectedContracts.length === 0
+        ){
+            return;
+        }
+    
+    
+    
+        const lastSelection =
+    
+            selectedContracts
+            .map(c => c.sam_id)
+            .join(",");
+    
+    
+    
+        if(
+            lastContractRef.current === lastSelection
+        ){
+            return;
+        }
+    
+    
+    
+        lastContractRef.current = lastSelection;
+    
+    
+    
+        let message;
+    
+    
+    
+        if(selectedContracts.length === 1){
+        
+            const contract =
+                selectedContracts[0];
+        
+        
+            message =
+    `I've switched my focus to:
+        
+    ${contract.title}
+        
+    Agency:
+    ${contract.agency}
+        
+    SAM ID:
+    ${contract.sam_id}
+        
+    You can ask me to summarize this opportunity, identify risks, or evaluate bid potential.`;
+        
+        }
+    
+    
+        else {
+        
+            message =
+    `I now have ${selectedContracts.length} opportunities selected.
+        
+    I can help you compare these contracts, analyze risks, identify the strongest bid opportunity, or summarize the differences.`;
+        
+        }
+    
+    
+    
+        setMessages(prev => [
+        
+            ...prev,
+        
+            {
+                role:"assistant",
+                content:message
+            }
+        
+        ]);
+    
+    
+    },[selectedContracts]);
 
     async function sendMessage(){
 
@@ -70,10 +153,16 @@ function AthenaPanel({
 
                     message: currentMessage,
 
-                    context:{
-                        searchResults:
-                            searchResults?.results ?? []
-                    }
+                context:{
+
+                    searchResults:
+                        searchResults?.results ?? [],
+                                
+                                
+                    selectedContracts:
+                        selectedContracts ?? []
+                                
+                }
 
                 })
             }
@@ -153,16 +242,15 @@ function AthenaPanel({
                 y:120,
                 width:420,
                 height:550
-            }}
-
-
-            minWidth={320}
-            minHeight={350}
-
-
-            bounds="window"
-
-
+                }}
+        
+                minWidth={320}
+                minHeight={350}
+        
+                bounds="window"
+        
+                dragHandleClassName="athena-drag-handle"
+        
             style={{
                 zIndex:1000
             }}
@@ -198,22 +286,24 @@ function AthenaPanel({
 
                 <div
 
+                    className="athena-drag-handle"
+                            
                     style={{
-
+                    
                         background:"#111827",
-
+                    
                         color:"white",
-
+                    
                         padding:"14px 18px",
-
+                    
                         display:"flex",
-
+                    
                         justifyContent:"space-between",
-
+                    
                         alignItems:"center",
-
+                    
                         cursor:"move"
-
+                    
                     }}
 
                 >
@@ -264,7 +354,11 @@ function AthenaPanel({
 
                         overflowY:"auto",
 
-                        background:"#f9fafb"
+                        background:"#f9fafb",
+
+                        cursor:"default",
+
+                         userSelect:"text"
 
                     }}
 

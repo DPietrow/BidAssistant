@@ -4,7 +4,111 @@ from openai import OpenAI
 client = OpenAI()
 
 
+
 class LLMAnswerGenerator:
+
+
+
+    def normalize_contract(
+        self,
+        item
+    ):
+        """
+        Converts either:
+
+        1. Retrieval result
+        2. Selected contract
+
+        into a common format
+        """
+
+
+        # Retrieval pipeline object
+
+        if "contract" in item:
+
+
+            contract = item["contract"]
+
+
+            return {
+
+                "sam_id":
+                    contract.get("sam_id"),
+
+
+                "title":
+                    contract.get("title"),
+
+
+                "agency":
+                    contract.get("agency"),
+
+
+                "naics":
+                    contract.get("naics"),
+
+
+                "url":
+                    contract.get("url"),
+
+
+                "evidence":
+                    item.get(
+                        "match",
+                        {}
+                    ).get(
+                        "matched_text",
+                        ""
+                    ),
+
+
+                "retrieval_method":
+                    item.get(
+                        "match_type"
+                    )
+
+            }
+
+
+
+        # Direct selected contract
+
+        return {
+
+            "sam_id":
+                item.get("sam_id"),
+
+
+            "title":
+                item.get("title"),
+
+
+            "agency":
+                item.get("agency"),
+
+
+            "naics":
+                item.get("naics"),
+
+
+            "url":
+                item.get("url"),
+
+
+            "evidence":
+                item.get(
+                    "description",
+                    ""
+                ),
+
+
+            "retrieval_method":
+                "selected_contract"
+
+        }
+
+
 
 
     def build_context(
@@ -12,13 +116,17 @@ class LLMAnswerGenerator:
         results
     ):
 
+
         context = []
 
 
         for item in results:
 
 
-            contract = item["contract"]
+            contract = self.normalize_contract(
+                item
+            )
+
 
             context.append(
 
@@ -35,11 +143,11 @@ Agency:
 NAICS:
 {contract.get("naics")}
 
-Retrieval Method:
-{item.get("match_type")}
+Context Source:
+{contract["retrieval_method"]}
 
 Evidence:
-{item["match"]["matched_text"]}
+{contract["evidence"]}
 """
 
             )
@@ -49,10 +157,13 @@ Evidence:
 
 
 
+
+
     def build_citations(
         self,
         results
     ):
+
 
         citations = []
 
@@ -60,17 +171,27 @@ Evidence:
         seen = set()
 
 
+
         for item in results:
 
-            contract = item["contract"]
+
+            contract = self.normalize_contract(
+                item
+            )
 
 
             sam_id = contract["sam_id"]
 
 
-            # prevent duplicates
+
+            if not sam_id:
+                continue
+
+
+
             if sam_id in seen:
                 continue
+
 
 
             seen.add(
@@ -78,17 +199,22 @@ Evidence:
             )
 
 
+
             citations.append(
 
                 {
+
                     "sam_id":
                         sam_id,
+
 
                     "title":
                         contract["title"],
 
+
                     "agency":
                         contract["agency"],
+
 
                     "url":
                         contract.get("url")
@@ -102,23 +228,53 @@ Evidence:
 
 
 
+
+
     def generate(
         self,
         query,
         results,
+        selected_contracts=None,
         filters=None
     ):
 
 
-        context = self.build_context(
-            results
+
+        results = results or []
+
+
+        selected_contracts = (
+            selected_contracts
+            or []
         )
+
+
+        #
+        # Selected contracts get priority
+        #
+
+        if selected_contracts:
+
+            context_results = selected_contracts
+
+        else:
+
+            context_results = results
+
+
+
+        context = self.build_context(
+            context_results
+        )
+
 
 
         filter_context = ""
 
 
+
         if filters:
+
 
             filter_context = f"""
 
@@ -129,19 +285,23 @@ Active Search Filters:
 """
 
 
+
         prompt = f"""
 
 You are Athena, an expert government procurement intelligence assistant.
+
+You help users analyze government contracting opportunities.
 
 Answer the user's question using ONLY the supplied contract information.
 
 Rules:
 
-- Do not invent vendors, agencies, dates, or contract details.
-- If information is unavailable, clearly state that.
-- Reference SAM IDs when discussing specific opportunities.
-- Summarize the opportunities clearly.
-- Do not create citations. Citations are handled separately.
+- Do not invent vendors, agencies, dates, values, or contract details.
+- If information is unavailable, say so clearly.
+- Always reference SAM IDs when discussing opportunities.
+- If multiple contracts are provided, compare them when appropriate.
+- Highlight differences in agencies, scope, NAICS, or available information.
+- Do not create citations. Citations are generated separately.
 
 
 {filter_context}
@@ -152,14 +312,15 @@ Contract Information:
 {context}
 
 
-Question:
+User Question:
 
 {query}
 
 
-Answer:
+Athena Response:
 
 """
+
 
 
         response = client.responses.create(
@@ -171,7 +332,11 @@ Answer:
         )
 
 
+
         return response.output_text
+
+
+
 
 
 
@@ -179,19 +344,30 @@ Answer:
         self,
         query,
         results,
+        selected_contracts=None,
         filters=None
     ):
 
 
         answer = self.generate(
+
             query=query,
+
             results=results,
+
+            selected_contracts=selected_contracts,
+
             filters=filters
+
         )
 
 
         citations = self.build_citations(
-            results
+
+            selected_contracts
+            if selected_contracts
+            else results
+
         )
 
 
@@ -200,10 +376,12 @@ Answer:
             "answer":
                 answer,
 
+
             "citations":
                 citations
 
         }
+
 
 
 

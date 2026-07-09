@@ -32,12 +32,19 @@ def chat():
         []
     )
 
+    selected_contracts=context.get(
+        "selectedContracts",
+        []
+    )
+
 
     response = athena_service.chat(
 
         message=message,
 
-        search_results=search_results
+        search_results=search_results,
+
+        selected_contracts=selected_contracts
 
     )
 

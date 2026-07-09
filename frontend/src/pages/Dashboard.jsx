@@ -1,27 +1,66 @@
 import { useState } from "react";
 
 import SearchPanel from "../components/search/SearchPanel";
-
 import ContractGrid from "../components/contracts/ContractGrid";
-
 import AthenaPanel from "../components/athena/AthenaPanel";
 
-import {
-    Bot
-} from "lucide-react";
+import { Bot } from "lucide-react";
 
-import {
-    theme
-} from "../theme";
+import { theme } from "../theme";
 
 
 function Dashboard() {
 
-    const [searchResults,setSearchResults] = useState([]);
+    // Entire response returned from /api/ask
+    const [searchResponse, setSearchResponse] = useState(null);
 
-    const [athenaOpen,setAthenaOpen] = useState(false);
+    const [athenaOpen, setAthenaOpen] = useState(false);
 
-    const [selectedContract,setSelectedContract] = useState(null);
+    const [selectedContract, setSelectedContract] = useState([]);
+
+
+    function handleSearchResults(response){
+
+        setSearchResponse(response);
+
+        // New search clears selection
+        setSelectedContract(null);
+
+    }
+
+
+    function handleContractSelected(contract){
+
+    setSelectedContracts(prev => {
+
+            const exists = prev.some(
+                item =>
+                item.sam_id === contract.sam_id
+            );
+        
+        
+            if(exists){
+            
+                return prev.filter(
+                    item =>
+                    item.sam_id !== contract.sam_id
+                );
+            
+            }
+        
+        
+            return [
+                ...prev,
+                contract
+            ];
+        
+        });
+    
+    
+        setAthenaOpen(true);
+        
+    }
+
 
     return (
 
@@ -34,7 +73,6 @@ function Dashboard() {
                 color:theme.text
             }}
         >
-
 
             {/* Header */}
 
@@ -53,27 +91,26 @@ function Dashboard() {
                         style={{
                             color:theme.text,
                             marginBottom:"8px"
-                        }}                  
+                        }}
                     >
                         Athena Bid Intelligence
                     </h1>
 
                     <p
                         style={{
-                             color:theme.mutedText
-                         }}
+                            color:theme.mutedText
+                        }}
                     >
                         Search and analyze government contracting opportunities
                     </p>
 
                 </div>
 
-
             </div>
 
 
 
-            {/* Search Area */}
+            {/* Search */}
 
             <div
                 style={{
@@ -81,25 +118,20 @@ function Dashboard() {
                     borderRadius:"12px",
                     padding:"24px",
                     marginBottom:"24px",
-                    boxShadow:
-                    "0 2px 8px rgba(0,0,0,.08)"
+                    boxShadow:"0 2px 8px rgba(0,0,0,.08)"
                 }}
             >
 
                 <SearchPanel
-                    onResults={
-                        setSearchResults
-                    }
+                    onResults={handleSearchResults}
                 />
-
 
             </div>
 
 
 
 
-
-            {/* Results Area */}
+            {/* Results */}
 
             <div
                 style={{
@@ -109,43 +141,45 @@ function Dashboard() {
                     minHeight:"300px"
                 }}
             >
-            
-            <h2
-                style={{
-                    color:theme.text
-                }}
-            >
-                Contract Opportunities
-            </h2>
-            
-            
-            <ContractGrid
 
-                results={
-                    searchResults?.results
-                }
-            
-                onSelectContract={
-                    setSelectedContract
-                }
-            
-            />
+                <h2
+                    style={{
+                        color:theme.text,
+                        marginBottom:"18px"
+                    }}
+                >
+                    Contract Opportunities
+                </h2>
 
-            
+
+                <ContractGrid
+
+                    results={
+                        searchResponse?.results ?? []
+                    }
+
+                    selectedContract={
+                        selectedContract
+                    }
+
+                    onSelectContract={
+                        handleContractSelected
+                    }
+
+                />
+
             </div>
 
 
 
-            {/* Athena Floating Button */}
+
+            {/* Floating Athena Button */}
 
             <button
 
-                onClick={() =>
-                    setAthenaOpen(
-                        !athenaOpen
-                    )
+                onClick={()=>
+                    setAthenaOpen(!athenaOpen)
                 }
-
 
                 style={{
 
@@ -176,7 +210,7 @@ function Dashboard() {
                     cursor:"pointer",
 
                     boxShadow:
-                    "0 4px 15px rgba(0,0,0,.25)"
+                        "0 4px 15px rgba(0,0,0,.25)"
 
                 }}
 
@@ -184,27 +218,39 @@ function Dashboard() {
 
                 <Bot size={28}/>
 
-
             </button>
 
 
+
+
+            {/* Athena */}
+
             {
-               athenaOpen &&
+
+                athenaOpen &&
+
                 <AthenaPanel
-                    searchResults={searchResults}
-                    onClose={() =>
+
+                    onClose={()=>
                         setAthenaOpen(false)
                     }
+
+                    searchResults={
+                        searchResponse
+                    }
+
+                    selectedContract={
+                        selectedContract
+                    }
+
                 />
 
             }
 
-
         </div>
 
-    )
+    );
 
 }
-
 
 export default Dashboard;

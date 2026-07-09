@@ -2,8 +2,13 @@ import ContractCard from "./ContractCard";
 
 
 function ContractGrid({
+
     results,
+
+    selectedContracts,
+
     onSelectContract
+
 }) {
 
 
@@ -11,11 +16,15 @@ function ContractGrid({
 
         return (
 
-            <p>
+            <p
+                style={{
+                    color:"#6b7280"
+                }}
+            >
                 No contract opportunities found.
             </p>
 
-        )
+        );
 
     }
 
@@ -30,7 +39,7 @@ function ContractGrid({
                 display:"grid",
 
                 gridTemplateColumns:
-                "repeat(auto-fill,minmax(300px,1fr))",
+                    "repeat(auto-fill,minmax(320px,1fr))",
 
                 gap:"20px"
 
@@ -39,34 +48,47 @@ function ContractGrid({
         >
 
             {
-                results.map(
-                    item =>
 
-                    <ContractCard
+                results.map((item)=>{
 
-                        key={
-                            item.contract.sam_id
-                        }
-
-
-                        contract={
-                            item.contract
-                        }
+                    const isSelected =
+                        selectedContracts.some(
+                            contract =>
+                            contract.sam_id === item.contract.sam_id
+                        );
 
 
-                        onSelect={
-                            onSelectContract
-                        }
+                    return (
 
-                    />
+                        <ContractCard
 
-                )
+                            key={
+                                item.contract.sam_id
+                            }
+
+                            contract={
+                                item.contract
+                            }
+
+                            selected={
+                                isSelected
+                            }
+
+                            onSelect={
+                                onSelectContract
+                            }
+
+                        />
+
+                    );
+
+                })
+
             }
-
 
         </div>
 
-    )
+    );
 
 }
 
