@@ -11,42 +11,48 @@ ask_bp = Blueprint(
 )
 
 
-@ask_bp.get("")
+@ask_bp.post("")
 def ask():
 
-    query = request.args.get("q")
+    data = request.json
+
+
+    query = data.get(
+        "query"
+    )
+
+
+    filters = data.get(
+        "filters",
+        {}
+    )
+
 
     if not query:
-        return jsonify({
-            "error": "Missing query"
-        }), 400
+
+        return jsonify(
+            {
+                "error":
+                "Missing query"
+            }
+        ),400
 
 
-    #
-    # Retrieve
-    #
+    response = search_service.search(
 
-    results = search_service.search(
-        query=query
-    )
-
-
-    #
-    # Generate answer
-    #
-
-    answer = answer_generator.generate(
         query=query,
-        results=results
+
+        filters=filters
+
     )
 
 
-    return jsonify({
+    return jsonify(
+        {
+            "query": query,
 
-        "query": query,
+            "answer": response["answer"],
 
-        "answer": answer,
-
-        "results": results
-
-    })
+            "results": response["results"]
+        }
+    )

@@ -1,4 +1,5 @@
 from services.embedding_service import embedding_service
+from services.search_filters import SearchFilters
 
 from services.retrieval.semantic_retriever import (
     semantic_retriever
@@ -26,8 +27,13 @@ class SearchService:
     def search(
         self,
         query,
+        filters=None,
         limit=10
     ):
+        
+        filters = SearchFilters.from_dict(
+            filters
+        )
 
         query_vector = embedding_service.embed_query(
             query
@@ -36,12 +42,14 @@ class SearchService:
 
         semantic_results = semantic_retriever.search(
             query_vector=query_vector,
+            filters=filters.to_dict(),
             limit=limit
         )
 
 
         keyword_results = keyword_retriever.search(
             query=query,
+            filters=filters.to_dict(),
             limit=limit
         )
 

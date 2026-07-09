@@ -10,24 +10,40 @@ search_bp = Blueprint(
 )
 
 
-@search_bp.get("")
+@search_bp.post("")
 def search():
 
-    query = request.args.get("q")
+    data = request.json
 
-    if not query:
-        return jsonify({
-            "error": "Missing query"
-        }), 400
 
-    results = search_service.search(
-        query=query
+    query = data.get(
+        "query",
+        ""
     )
 
-    return jsonify({
 
-        "query": query,
+    filters = data.get(
+        "filters",
+        {}
+    )
 
-        "results": results
 
-    })
+    if not query:
+
+        return jsonify(
+            {
+                "error":
+                "Missing query"
+            }
+        ),400
+
+
+    response = search_service.search(
+        query=query,
+        filters=filters
+    )
+
+
+    return jsonify(
+        response
+    )
