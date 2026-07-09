@@ -1,8 +1,6 @@
 from flask import Blueprint, request, jsonify
 
 from services.search_service import search_service
-from services.llm_answer_generator import answer_generator
-
 
 ask_bp = Blueprint(
     "ask",
@@ -49,10 +47,22 @@ def ask():
 
     return jsonify(
         {
-            "query": query,
+            "query":
+                query,
 
-            "answer": response["answer"],
 
-            "results": response["results"]
+            "answer":
+                response["answer"],
+
+
+            "results":
+                response["results"],
+
+
+            "citations":
+                response.get(
+                    "citations",
+                    []
+                )
         }
     )

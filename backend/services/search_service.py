@@ -1,3 +1,5 @@
+import time
+
 from services.embedding_service import embedding_service
 from services.search_filters import SearchFilters
 
@@ -30,7 +32,8 @@ class SearchService:
         filters=None,
         limit=10
     ):
-        
+        start = time.time()
+
         filters = SearchFilters.from_dict(
             filters
         )
@@ -39,6 +42,10 @@ class SearchService:
             query
         )
 
+        print(
+            "Embedding:",
+            time.time() - start
+        )
 
         semantic_results = semantic_retriever.search(
             query_vector=query_vector,
@@ -46,7 +53,10 @@ class SearchService:
             limit=limit
         )
 
-
+        print(
+            "Semantic:",
+            time.time() - start
+        )
         keyword_results = keyword_retriever.search(
             query=query,
             filters=filters.to_dict(),
@@ -60,7 +70,7 @@ class SearchService:
             limit
         )
 
-
+  
         response = []
 
 
@@ -177,6 +187,10 @@ class SearchService:
             results=response,
             top_k=5
         )
+        print(
+            "Cross encoder:",
+            time.time() - start
+        )
 
         for rank, item in enumerate(
             response,
@@ -184,9 +198,15 @@ class SearchService:
         ):
             item["rank"] = rank
 
-        answer = answer_generator.generate(
+        answer_data = answer_generator.generate_with_citations(
             query=query,
-            results=response
+            results=response,
+            filters=filters
+        )
+
+        print(
+            "LLM:",
+            time.time() - start
         )
 
         citations = []
@@ -216,13 +236,13 @@ class SearchService:
         return {
 
             "answer":
-                answer,
-
-            "citations":
-                citations,
+                answer_data["answer"],
 
             "results":
-                response
+                response,
+
+            "citations":
+                answer_data["citations"]
 
         }
 

@@ -18,26 +18,25 @@ class LLMAnswerGenerator:
         for item in results:
 
 
+            contract = item["contract"]
+
             context.append(
 
 f"""
-Contract ID:
-{item["contract"]["contract_id"]}
-
 SAM ID:
-{item["contract"]["sam_id"]}
+{contract["sam_id"]}
 
-Title:
-{item["contract"]["title"]}
+Contract Title:
+{contract["title"]}
 
 Agency:
-{item["contract"]["agency"]}
+{contract["agency"]}
 
 NAICS:
-{item["contract"]["naics"]}
+{contract.get("naics")}
 
-Retrieval Type:
-{item["match_type"]}
+Retrieval Method:
+{item.get("match_type")}
 
 Evidence:
 {item["match"]["matched_text"]}
@@ -50,10 +49,64 @@ Evidence:
 
 
 
+    def build_citations(
+        self,
+        results
+    ):
+
+        citations = []
+
+
+        seen = set()
+
+
+        for item in results:
+
+            contract = item["contract"]
+
+
+            sam_id = contract["sam_id"]
+
+
+            # prevent duplicates
+            if sam_id in seen:
+                continue
+
+
+            seen.add(
+                sam_id
+            )
+
+
+            citations.append(
+
+                {
+                    "sam_id":
+                        sam_id,
+
+                    "title":
+                        contract["title"],
+
+                    "agency":
+                        contract["agency"],
+
+                    "url":
+                        contract.get("url")
+
+                }
+
+            )
+
+
+        return citations
+
+
+
     def generate(
         self,
         query,
-        results
+        results,
+        filters=None
     ):
 
 
@@ -62,16 +115,36 @@ Evidence:
         )
 
 
+        filter_context = ""
+
+
+        if filters:
+
+            filter_context = f"""
+
+Active Search Filters:
+
+{filters}
+
+"""
+
+
         prompt = f"""
 
-You are an expert government procurement assistant.
+You are Athena, an expert government procurement intelligence assistant.
 
 Answer the user's question using ONLY the supplied contract information.
 
 Rules:
-- Do not invent vendors, agencies, or contract details.
-- If the answer is not available, state that clearly.
-- Cite the SAM ID when possible.
+
+- Do not invent vendors, agencies, dates, or contract details.
+- If information is unavailable, clearly state that.
+- Reference SAM IDs when discussing specific opportunities.
+- Summarize the opportunities clearly.
+- Do not create citations. Citations are handled separately.
+
+
+{filter_context}
 
 
 Contract Information:
@@ -99,6 +172,38 @@ Answer:
 
 
         return response.output_text
+
+
+
+    def generate_with_citations(
+        self,
+        query,
+        results,
+        filters=None
+    ):
+
+
+        answer = self.generate(
+            query=query,
+            results=results,
+            filters=filters
+        )
+
+
+        citations = self.build_citations(
+            results
+        )
+
+
+        return {
+
+            "answer":
+                answer,
+
+            "citations":
+                citations
+
+        }
 
 
 
