@@ -5,7 +5,7 @@ from services.search_service import search_service
 ask_bp = Blueprint(
     "ask",
     __name__,
-    url_prefix="/ask"
+    url_prefix="/api/ask"
 )
 
 

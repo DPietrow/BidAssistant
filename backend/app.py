@@ -13,6 +13,7 @@ from routes.ingestion import ingestion_bp
 from routes.search import search_bp
 from routes.embeddings import embedding_bp
 from routes.ask import ask_bp
+from routes.athena import athena_bp
 
 
 def create_app():
@@ -32,6 +33,8 @@ def create_app():
     app.register_blueprint(search_bp)
     app.register_blueprint(embedding_bp)
     app.register_blueprint(ask_bp)
+    app.register_blueprint(athena_bp)
+
 
     @app.route("/")
     def root():
