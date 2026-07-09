@@ -12,6 +12,13 @@ from services.retrieval.hybrid_ranker import (
     hybrid_ranker
 )
 
+from services.retrieval.crossencoder_ranker import (
+    cross_encoder_ranker
+)
+
+from services.llm_answer_generator import (
+    answer_generator
+)
 
 class SearchService:
 
@@ -129,7 +136,10 @@ class SearchService:
                         result["agency"],
 
                     "naics":
-                        result.get("naics")
+                        result.get("naics"),
+
+                    "url":
+                        result.get("url")
 
                 },
 
@@ -153,9 +163,62 @@ class SearchService:
 
             })
 
+        # Cross encode
+        response = cross_encoder_ranker.rerank(
+            query=query,
+            results=response,
+            top_k=5
+        )
 
-        return response
+        for rank, item in enumerate(
+            response,
+            start=1
+        ):
+            item["rank"] = rank
 
+        answer = answer_generator.generate(
+            query=query,
+            results=response
+        )
+
+        citations = []
+
+
+        for item in response:
+        
+        
+            citations.append({
+            
+                "title":
+                    item["contract"]["title"],
+
+                "agency":
+                    item["contract"]["agency"],
+
+                "sam_id":
+                    item["contract"]["sam_id"],
+
+                "url":
+                    item["contract"].get(
+                        "url"
+                    )
+
+            })
+
+        return {
+
+            "answer":
+                answer,
+
+            "citations":
+                citations,
+
+            "results":
+                response
+
+        }
+
+        
 
 
     def get_keyword_match_text(
@@ -204,39 +267,39 @@ class SearchService:
 
 
     def get_confidence(self, score, match_type=None):
-    
+
         if match_type == "hybrid":
-        
+
             if score >= .80:
                 return "very_high"
-    
+
             return "high"
-    
-    
+
+
         if match_type == "exact_identifier":
-        
+
             return "very_high"
-    
-    
+
+
         if match_type in [
             "title_match",
             "naics_match"
         ]:
-    
+
             if score >= .75:
                 return "high"
-    
+
             return "medium"
-    
-    
+
+
         if score >= .70:
             return "medium"
-    
-    
+
+
         if score >= .45:
             return "low"
-    
-    
+
+
         return "very_low"
 
 

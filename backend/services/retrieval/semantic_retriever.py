@@ -34,6 +34,8 @@ class SemanticRetriever:
 
                     c.naics,
 
+                    c.url,
+
 
                     1 - (
                         ce.embedding <=> CAST(:embedding AS vector)
@@ -128,6 +130,9 @@ class SemanticRetriever:
 
                 "naics":
                     row.naics,
+
+                "url":
+                    row.url,
 
 
                 "chunk_id":

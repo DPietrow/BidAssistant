@@ -30,6 +30,8 @@ class KeywordRetriever:
 
                 c.naics,
 
+                c.url,
+
 
                 CASE
 
@@ -210,6 +212,9 @@ class KeywordRetriever:
 
                 "naics":
                     row.naics,
+
+                "url":
+                    row.url,
 
 
                 "keyword_score":

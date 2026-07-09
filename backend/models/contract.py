@@ -15,7 +15,7 @@ class Contract(db.Model):
 
     sam_id = db.Column(db.String(100), unique=True, nullable=False)
 
-    url = db.Column(db.Text)
+    url = db.Column(db.Text, nullable=True)
 
     source = db.Column(db.String(50), default="SAM.gov")
 

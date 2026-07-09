@@ -1,17 +1,18 @@
 from flask import Blueprint, request, jsonify
 
 from services.search_service import search_service
+from services.llm_answer_generator import answer_generator
 
 
-search_bp = Blueprint(
-    "search",
+ask_bp = Blueprint(
+    "ask",
     __name__,
-    url_prefix="/search"
+    url_prefix="/ask"
 )
 
 
-@search_bp.get("")
-def search():
+@ask_bp.get("")
+def ask():
 
     query = request.args.get("q")
 
@@ -20,13 +21,31 @@ def search():
             "error": "Missing query"
         }), 400
 
+
+    #
+    # Retrieve
+    #
+
     results = search_service.search(
         query=query
     )
 
+
+    #
+    # Generate answer
+    #
+
+    answer = answer_generator.generate(
+        query=query,
+        results=results
+    )
+
+
     return jsonify({
 
         "query": query,
+
+        "answer": answer,
 
         "results": results
 

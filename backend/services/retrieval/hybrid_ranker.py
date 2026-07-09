@@ -103,6 +103,9 @@ class HybridRanker:
                 "naics":
                     item.get("naics"),
 
+                "url":
+                    item.get("url"),
+
 
                 "semantic_score":
                     self.normalize_semantic(
@@ -186,6 +189,9 @@ class HybridRanker:
 
                     "naics":
                         item.get("naics"),
+
+                    "url":
+                        item.get("url"),
 
 
                     "semantic_score":
