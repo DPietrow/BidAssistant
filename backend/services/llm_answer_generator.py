@@ -364,6 +364,128 @@ Athena Response:
 
             model="gpt-5",
 
+            input=prompt
+
+        )
+
+
+        return response.output_text
+    
+
+    def stream_generate(
+        self,
+        query,
+        results,
+        selected_contracts=None,
+        filters=None,
+        conversation_history=None
+    ):
+
+
+        results = results or []
+
+
+        selected_contracts = (
+            selected_contracts
+            or []
+        )
+
+
+
+        #
+        # Selected contracts override search
+        #
+
+        if selected_contracts:
+
+            context_results = selected_contracts
+
+
+        else:
+
+            context_results = results
+
+
+
+        context = self.build_context(
+            context_results
+        )
+
+
+
+        history = self.build_history(
+            conversation_history
+        )
+
+
+
+        filter_context = ""
+
+
+
+        if filters:
+
+
+            filter_context = f"""
+
+Active Search Filters:
+
+{filters}
+
+"""
+
+
+
+        prompt = f"""
+
+You are Athena, an expert government procurement intelligence assistant.
+
+You help users analyze government contracting opportunities.
+
+Use ONLY the supplied contract information.
+
+Rules:
+
+- Do not invent vendors, agencies, dates, values, or contract details.
+- If information is unavailable, clearly state that.
+- Always reference SAM IDs when discussing opportunities.
+- When multiple contracts are provided, compare them when useful.
+- Do not create citations. Citations are generated separately.
+
+
+
+Conversation History:
+
+{history}
+
+
+
+{filter_context}
+
+
+
+Contract Information:
+
+{context}
+
+
+
+Current User Question:
+
+{query}
+
+
+
+Athena Response:
+
+"""
+
+
+
+        stream = client.responses.create(
+
+            model="gpt-5",
+
             input=prompt,
 
             stream=True
@@ -371,7 +493,11 @@ Athena Response:
         )
 
 
-        return response.output_text
+        for event in stream:
+
+            if event.type == "response.output_text.delta":
+
+                yield event.delta
 
 
 

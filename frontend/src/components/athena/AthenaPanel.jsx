@@ -34,10 +34,12 @@ function AthenaPanel({
 
     const lastContextRef = useRef(null);
 
+    const messagesEndRef = useRef(null);
+
 
 
     useEffect(() => {
-
+        
 
         if(
             !selectedContracts ||
@@ -133,20 +135,298 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
     },[selectedContracts]);
 
 
+    useEffect(()=>{
+
+        messagesEndRef.current?.scrollIntoView({
+            behavior:"smooth"
+        });
+
+    },[messages]);
+
+
+   async function sendMessage() {
+
+    if (!input.trim()) return;
+
+
+    const currentMessage = input;
+
+
+    setMessages(prev => [
+
+        ...prev,
+
+        {
+            role:"user",
+            content:currentMessage
+        }
+
+    ]);
+
+
+    setInput("");
+
+    setLoading(true);
 
 
 
-    async function sendMessage(){
+    // Create assistant placeholder
+    const assistantIndex = messages.length + 1;
 
 
-        if(!input.trim())
-            return;
+    setMessages(prev => [
+
+        ...prev,
+
+        {
+            role:"assistant",
+            content:""
+        }
+
+    ]);
 
 
 
-        const currentMessage =
-            input;
+    try {
 
+
+        const response = await fetch(
+
+            "/athena/chat/stream",
+
+            {
+
+                method:"POST",
+
+                headers:{
+
+                    "Content-Type":
+                    "application/json"
+
+                },
+
+
+                body:JSON.stringify({
+
+                    session_id:
+                        sessionId,
+
+
+                    message:
+                        currentMessage,
+
+
+                    context:{
+
+                        searchResults:
+                            searchResults?.results ?? [],
+
+
+                        selectedContracts:
+                            selectedContracts ?? []
+
+                    }
+
+                })
+
+            }
+
+        );
+
+
+
+        if(!response.ok){
+
+            throw new Error(
+                `Athena API error ${response.status}`
+            );
+
+        }
+
+
+
+        const reader =
+            response.body.getReader();
+
+
+
+        const decoder =
+            new TextDecoder();
+
+
+
+        let buffer = "";
+
+        let completeText = "";
+
+
+
+        while(true){
+
+
+            const {
+                done,
+                value
+            } =
+            await reader.read();
+
+
+
+            if(done)
+                break;
+
+
+
+            buffer += decoder.decode(
+                value,
+                {
+                    stream:true
+                }
+            );
+
+
+
+            const events =
+                buffer.split(
+                    "\n\n"
+                );
+
+
+
+            // Keep incomplete event
+            buffer =
+                events.pop();
+
+
+
+            for(const event of events){
+
+
+                if(!event.startsWith("data:"))
+                    continue;
+
+
+
+                const json =
+                    JSON.parse(
+                        event.replace(
+                            "data:",
+                            ""
+                        )
+                    );
+
+
+
+                //
+                // Streaming token
+                //
+
+                if(
+                    json.type === "token"
+                ){
+
+                    completeText +=
+                        json.content;
+
+
+
+                    setMessages(prev => {
+
+
+                        const updated =
+                            [...prev];
+
+
+                        updated[assistantIndex] = {
+
+                            role:"assistant",
+
+                            content:
+                                completeText
+
+                        };
+
+
+                        return updated;
+
+                    });
+
+
+                }
+
+
+
+                //
+                // Stream complete
+                //
+
+                if(
+                    json.type === "done"
+                ){
+
+                    if(json.session_id){
+
+                        setSessionId(
+                            json.session_id
+                        );
+
+                    }
+
+                }
+
+
+
+                //
+                // Backend error
+                //
+
+                if(
+                    json.type === "error"
+                ){
+
+                    completeText =
+                        json.content;
+
+
+                    setMessages(prev => {
+
+
+                        const updated =
+                            [...prev];
+
+
+                        updated[assistantIndex] = {
+
+                            role:"assistant",
+
+                            content:
+                                completeText
+
+                        };
+
+
+                        return updated;
+
+                    });
+
+                }
+
+
+            }
+
+
+        }
+
+
+    }
+
+    catch(error){
+
+
+        console.error(
+            "Athena streaming error:",
+            error
+        );
 
 
         setMessages(prev => [
@@ -154,147 +434,26 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
             ...prev,
 
             {
-                role:"user",
-                content:currentMessage
+
+                role:"assistant",
+
+                content:
+                "I encountered an error processing that request."
+
             }
 
         ]);
 
-
-
-        setInput("");
-
-        setLoading(true);
-
-
-
-        try {
-
-
-            const response =
-                await fetch(
-
-                    "/athena/chat",
-
-                    {
-
-                        method:"POST",
-
-                        headers:{
-
-                            "Content-Type":
-                            "application/json"
-
-                        },
-
-
-                        body:JSON.stringify({
-
-                            session_id: sessionId,
-
-                            message:
-                                currentMessage,
-
-
-                            context:{
-
-
-                                searchResults:
-                                    searchResults?.results ?? [],
-
-
-
-                                selectedContracts:
-                                    selectedContracts ?? []
-
-                            }
-
-
-                        })
-
-                    }
-
-                );
-
-
-
-            if(!response.ok){
-
-                throw new Error(
-                    `Athena API error ${response.status}`
-                );
-
-            }
-
-
-
-            const data =
-                await response.json();
-
-            if(data.session_id){
-
-                setSessionId(
-                    data.session_id
-                );
-            
-            }
-
-            setMessages(prev => [
-
-                ...prev,
-
-                {
-
-                    role:"assistant",
-
-                    content:
-                        data.answer ??
-                        "I could not generate a response."
-
-                }
-
-            ]);
-
-
-
-        }
-
-
-        catch(error){
-
-
-            console.error(
-                "Athena error:",
-                error
-            );
-
-
-            setMessages(prev => [
-
-                ...prev,
-
-                {
-
-                    role:"assistant",
-
-                    content:
-                    "I encountered an error processing that request."
-
-                }
-
-            ]);
-
-
-        }
-
-
-        setLoading(false);
-
-
     }
 
 
+    finally {
 
+        setLoading(false);
+
+    }
+
+  }
 
 
     return (
@@ -556,7 +715,7 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
 
                 </div>
-
+                <div ref={messagesEndRef}/>
 
 
 

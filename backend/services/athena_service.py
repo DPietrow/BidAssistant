@@ -1,9 +1,54 @@
 import time
+import json
 
 from services.llm_answer_generator import answer_generator
 from services.athena_memory import memory
 
+
 class AthenaService:
+
+
+    def _build_context_results(
+        self,
+        search_results,
+        selected_contracts
+    ):
+
+        search_results = search_results or []
+
+        selected_contracts = selected_contracts or []
+
+
+        #
+        # Selected contracts always override search
+        #
+
+        if selected_contracts:
+
+            return [
+
+                {
+                    "contract": contract,
+
+                    "match_type":
+                        "selected_contract",
+
+                    "match": {
+
+                        "matched_text":
+                            "User selected contract"
+
+                    }
+
+                }
+
+                for contract in selected_contracts
+
+            ]
+
+
+        return search_results
+
 
 
     def chat(
@@ -17,9 +62,241 @@ class AthenaService:
         start = time.time()
 
 
+        context_results = self._prepare_request(
+            session_id,
+            search_results,
+            selected_contracts
+        )
+
+
+        session = memory.get_session(
+            session_id
+        )
+
+
+
+        if not context_results:
+
+            return {
+
+                "answer":
+                    "I don't have any contract opportunities in context yet. Try searching first.",
+
+                "citations": [],
+
+                "contracts": []
+
+            }
+
+
+
+        answer = answer_generator.generate(
+
+            query=message,
+
+            results=context_results,
+
+            selected_contracts=selected_contracts,
+
+            conversation_history=session["messages"]
+
+        )
+
+
+        memory.add_message(
+            session_id,
+            "user",
+            message
+        )
+
+
+        memory.add_message(
+            session_id,
+            "assistant",
+            answer
+        )
+
+
+        print(
+            "LLM finished:",
+            time.time() - start
+        )
+
+
+        return {
+
+
+            "answer":
+                answer,
+
+
+            "citations":
+                self.build_citations(
+                    context_results
+                ),
+
+
+            "contracts":
+                [
+                    item["contract"]
+                    for item in context_results
+                ]
+
+        }
+
+
+
+    def stream_chat(
+        self,
+        session_id,
+        message,
+        search_results=None,
+        selected_contracts=None
+    ):
+
+        start = time.time()
+
+
+
+        context_results = self._prepare_request(
+            session_id,
+            search_results,
+            selected_contracts
+        )
+
+
+        session = memory.get_session(
+            session_id
+        )
+
+
+
+        if not context_results:
+
+            yield {
+
+                "type":
+                    "token",
+
+                "content":
+                    "I don't have any contract opportunities in context yet. Try searching first."
+
+            }
+
+
+            yield {
+
+                "type":"done",
+            
+                "session_id":session_id,
+            
+                "citations":
+                    self.build_citations(context_results),
+            
+                "contracts":
+                    [
+                        item["contract"]
+                        for item in context_results
+                    ]
+            
+            }
+
+            return
+
+
+
+
+        full_answer = ""
+
+
+
+        for chunk in answer_generator.stream_generate(
+
+            query=message,
+
+            results=context_results,
+
+            selected_contracts=selected_contracts,
+
+            conversation_history=session["messages"]
+
+        ):
+
+
+            full_answer += chunk
+
+
+            yield {
+
+                "type":
+                    "token",
+
+                "content":
+                    chunk
+
+            }
+
+
+
+        memory.add_message(
+            session_id,
+            "user",
+            message
+        )
+
+
+        memory.add_message(
+            session_id,
+            "assistant",
+            full_answer
+        )
+
+
+
+        print(
+            "LLM streaming finished:",
+            time.time() - start
+        )
+
+
+
+        yield {
+
+
+            "type":
+                "done",
+
+
+            "citations":
+                self.build_citations(
+                    context_results
+                ),
+
+
+            "contracts":
+                [
+                    item["contract"]
+                    for item in context_results
+                ]
+
+        }
+
+
+
+
+    def _prepare_request(
+        self,
+        session_id,
+        search_results,
+        selected_contracts
+    ):
+
+
         search_results = search_results or []
 
         selected_contracts = selected_contracts or []
+
+
 
         memory.update_context(
 
@@ -31,9 +308,7 @@ class AthenaService:
 
         )
 
-        session = memory.get_session(
-            session_id
-        )
+
 
         print(
             "Athena request started"
@@ -53,117 +328,13 @@ class AthenaService:
 
 
 
-        # --------------------------------
-        # Selected contracts take priority
-        # --------------------------------
+        return self._build_context_results(
 
-        if selected_contracts:
+            search_results,
 
-
-            context_results = [
-
-                {
-                    "contract": contract,
-
-                    "match_type":
-                        "selected_contract",
-
-                    "match":{
-
-                        "matched_text":
-                        "User selected contract"
-
-                    }
-
-                }
-
-                for contract in selected_contracts
-
-            ]
-
-
-        else:
-
-
-            context_results = search_results
-
-
-
-
-        if not context_results:
-
-
-            return {
-
-
-                "answer":
-                "I don't have any contract opportunities in context yet. Try searching first.",
-
-
-                "citations":[],
-
-                "contracts":[]
-
-            }
-
-
-
-
-
-        answer = answer_generator.generate(
-
-
-            query=message,
-
-
-            results=context_results,
-
-            selected_contracts=selected_contracts,
-
-
-            conversation_history=session["messages"]
-
+            selected_contracts
 
         )
-
-
-
-        print(
-
-            "LLM finished:",
-
-            time.time() - start
-
-        )
-
-
-
-
-        return {
-
-
-            "answer":
-                answer,
-
-
-            "citations":
-                self.build_citations(
-                    context_results
-                ),
-
-
-            "contracts":
-                [
-
-                    item["contract"]
-
-                    for item in context_results
-
-                ]
-
-        }
-
-
 
 
 
@@ -173,22 +344,22 @@ class AthenaService:
     ):
 
 
-        citations=[]
+        citations = []
 
-
-        seen=set()
+        seen = set()
 
 
 
         for item in results:
 
 
-            contract=item["contract"]
+            contract = item["contract"]
 
 
-            sam_id=contract.get(
+            sam_id = contract.get(
                 "sam_id"
             )
+
 
 
             if sam_id in seen:
@@ -196,9 +367,11 @@ class AthenaService:
                 continue
 
 
+
             seen.add(
                 sam_id
             )
+
 
 
             citations.append({
@@ -216,6 +389,7 @@ class AthenaService:
                     contract.get("url")
 
             })
+
 
 
         return citations
