@@ -180,7 +180,8 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
         {
             role:"assistant",
-            content:""
+            content:"",
+            streaming:true
         }
 
     ]);
@@ -324,7 +325,7 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
                 if(
                     json.type === "token"
                 ){
-
+                                        
                     completeText +=
                         json.content;
 
@@ -341,8 +342,9 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
                             role:"assistant",
 
-                            content:
-                                completeText
+                            content: completeText,
+
+                            streaming: false
 
                         };
 
@@ -638,81 +640,86 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
 
                     {
-
-                    messages.map(
-
-                        (msg,index)=>(
-
-
+                        messages.map((msg,index)=>(
+                        
                         <div
-
                             key={index}
-
                             style={{
-
                                 marginBottom:"12px",
-
                                 textAlign:
-                                msg.role==="user"
-                                ?
-                                "right"
-                                :
-                                "left"
-
+                                    msg.role==="user"
+                                    ?
+                                    "right"
+                                    :
+                                    "left"
                             }}
-
                         >
-
-
-                            <span
-
-                                style={{
-
-                                    display:"inline-block",
-
-                                    padding:"10px 14px",
-
-                                    borderRadius:"12px",
-
-                                    background:
+                        
+                        <div
+                            style={{
+                                display:"inline-block",
+                                padding:"10px 14px",
+                                borderRadius:"12px",
+                                background:
                                     msg.role==="user"
                                     ?
                                     "#2563eb"
                                     :
                                     "#e5e7eb",
-
-                                    color:
+                                color:
                                     msg.role==="user"
                                     ?
                                     "white"
                                     :
                                     "#111827"
-
-                                }}
-
-                            >
-
-                                {msg.content}
-
-                            </span>
-
-
+                            }}
+                        >
+                        
+                        {
+                        msg.streaming ?
+                        
+                        <div
+                            style={{
+                                display:"flex",
+                                alignItems:"center",
+                                gap:"10px",
+                                color:"#6b7280",
+                                fontSize:"14px"
+                            }}
+                        >
+                        
+                        <div className="athena-thinking-dots">
+                        
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        
                         </div>
+                        
+                        
+                        <span>
+                        Athena is analyzing opportunities...
+                        </span>
+                        
+                        
+                        </div>
+                        
+                        :
+                        
+                        msg.content
+                        
+                        }
+                        
+                        
+                        </div>
+                        
+                        </div>
+                        
+                        ))
+                        }
 
 
-                    ))}
-
-
-                    {
-
-                    loading &&
-
-                    <p>
-                        Athena is thinking...
-                    </p>
-
-                    }
-
+                    
 
                 </div>
                 <div ref={messagesEndRef}/>
