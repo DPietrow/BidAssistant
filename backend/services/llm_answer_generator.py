@@ -14,16 +14,9 @@ class LLMAnswerGenerator:
         item
     ):
         """
-        Converts either:
-
-        1. Retrieval result
-        2. Selected contract
-
-        into a common format
+        Converts retrieval results and selected contracts
+        into a common structure.
         """
-
-
-        # Retrieval pipeline object
 
         if "contract" in item:
 
@@ -36,22 +29,17 @@ class LLMAnswerGenerator:
                 "sam_id":
                     contract.get("sam_id"),
 
-
                 "title":
                     contract.get("title"),
-
 
                 "agency":
                     contract.get("agency"),
 
-
                 "naics":
                     contract.get("naics"),
 
-
                 "url":
                     contract.get("url"),
-
 
                 "evidence":
                     item.get(
@@ -62,7 +50,6 @@ class LLMAnswerGenerator:
                         ""
                     ),
 
-
                 "retrieval_method":
                     item.get(
                         "match_type"
@@ -72,9 +59,8 @@ class LLMAnswerGenerator:
 
 
 
-        # Direct selected contract
-
         return {
+
 
             "sam_id":
                 item.get("sam_id"),
@@ -158,6 +144,42 @@ Evidence:
 
 
 
+    def build_history(
+        self,
+        messages
+    ):
+
+
+        if not messages:
+
+            return "No previous conversation history."
+
+
+
+        history = []
+
+
+
+        for msg in messages[-10:]:
+
+
+            history.append(
+
+f"""
+{msg["role"].upper()}:
+
+{msg["content"]}
+"""
+
+            )
+
+
+
+        return "\n".join(history)
+
+
+
+
 
     def build_citations(
         self,
@@ -185,11 +207,13 @@ Evidence:
 
 
             if not sam_id:
+
                 continue
 
 
 
             if sam_id in seen:
+
                 continue
 
 
@@ -200,28 +224,24 @@ Evidence:
 
 
 
-            citations.append(
+            citations.append({
 
-                {
-
-                    "sam_id":
-                        sam_id,
+                "sam_id":
+                    sam_id,
 
 
-                    "title":
-                        contract["title"],
+                "title":
+                    contract["title"],
 
 
-                    "agency":
-                        contract["agency"],
+                "agency":
+                    contract["agency"],
 
 
-                    "url":
-                        contract.get("url")
+                "url":
+                    contract.get("url")
 
-                }
-
-            )
+            })
 
 
         return citations
@@ -235,9 +255,9 @@ Evidence:
         query,
         results,
         selected_contracts=None,
-        filters=None
+        filters=None,
+        conversation_history=None
     ):
-
 
 
         results = results or []
@@ -249,13 +269,15 @@ Evidence:
         )
 
 
+
         #
-        # Selected contracts get priority
+        # Selected contracts override search
         #
 
         if selected_contracts:
 
             context_results = selected_contracts
+
 
         else:
 
@@ -265,6 +287,12 @@ Evidence:
 
         context = self.build_context(
             context_results
+        )
+
+
+
+        history = self.build_history(
+            conversation_history
         )
 
 
@@ -292,19 +320,26 @@ You are Athena, an expert government procurement intelligence assistant.
 
 You help users analyze government contracting opportunities.
 
-Answer the user's question using ONLY the supplied contract information.
+Use ONLY the supplied contract information.
 
 Rules:
 
 - Do not invent vendors, agencies, dates, values, or contract details.
-- If information is unavailable, say so clearly.
+- If information is unavailable, clearly state that.
 - Always reference SAM IDs when discussing opportunities.
-- If multiple contracts are provided, compare them when appropriate.
-- Highlight differences in agencies, scope, NAICS, or available information.
+- When multiple contracts are provided, compare them when useful.
 - Do not create citations. Citations are generated separately.
 
 
+
+Conversation History:
+
+{history}
+
+
+
 {filter_context}
+
 
 
 Contract Information:
@@ -312,9 +347,11 @@ Contract Information:
 {context}
 
 
-User Question:
+
+Current User Question:
 
 {query}
+
 
 
 Athena Response:
@@ -327,14 +364,14 @@ Athena Response:
 
             model="gpt-5",
 
-            input=prompt
+            input=prompt,
+
+            stream=True
 
         )
 
 
-
         return response.output_text
-
 
 
 
@@ -345,8 +382,10 @@ Athena Response:
         query,
         results,
         selected_contracts=None,
-        filters=None
+        filters=None,
+        conversation_history=None
     ):
+
 
 
         answer = self.generate(
@@ -357,21 +396,34 @@ Athena Response:
 
             selected_contracts=selected_contracts,
 
-            filters=filters
+            filters=filters,
+
+            conversation_history=conversation_history
 
         )
 
 
-        citations = self.build_citations(
+
+        citation_source = (
 
             selected_contracts
+
             if selected_contracts
+
             else results
 
         )
 
 
+
+        citations = self.build_citations(
+            citation_source
+        )
+
+
+
         return {
+
 
             "answer":
                 answer,
@@ -381,6 +433,7 @@ Athena Response:
                 citations
 
         }
+
 
 
 

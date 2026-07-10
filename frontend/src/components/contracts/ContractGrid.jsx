@@ -5,7 +5,7 @@ function ContractGrid({
 
     results,
 
-    selectedContracts,
+    selectedContracts = [],
 
     onSelectContract
 
@@ -51,40 +51,59 @@ function ContractGrid({
 
                 results.map((item)=>{
 
+
+                    const contract =
+                        item.contract;
+
+
+
                     const isSelected =
                         selectedContracts.some(
-                            contract =>
-                            contract.sam_id === item.contract.sam_id
+
+                            selected =>
+                            selected.sam_id === contract.sam_id
+
                         );
+
 
 
                     return (
 
                         <ContractCard
 
+
                             key={
-                                item.contract.sam_id
+                                contract.sam_id
                             }
 
+
+
                             contract={
-                                item.contract
+                                contract
                             }
+
+
 
                             selected={
                                 isSelected
                             }
 
+
+
                             onSelect={
                                 onSelectContract
                             }
+
 
                         />
 
                     );
 
+
                 })
 
             }
+
 
         </div>
 

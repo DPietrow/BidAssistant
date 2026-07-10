@@ -1,13 +1,14 @@
 import time
 
 from services.llm_answer_generator import answer_generator
-
+from services.athena_memory import memory
 
 class AthenaService:
 
 
     def chat(
         self,
+        session_id,
         message,
         search_results=None,
         selected_contracts=None
@@ -16,20 +17,26 @@ class AthenaService:
         start = time.time()
 
 
+        search_results = search_results or []
+
+        selected_contracts = selected_contracts or []
+
+        memory.update_context(
+
+            session_id,
+
+            selected_contracts,
+
+            search_results
+
+        )
+
+        session = memory.get_session(
+            session_id
+        )
+
         print(
             "Athena request started"
-        )
-
-
-        search_results = (
-            search_results
-            or []
-        )
-
-
-        selected_contracts = (
-            selected_contracts
-            or []
         )
 
 
@@ -40,82 +47,95 @@ class AthenaService:
 
 
         print(
-            "Selected contracts:",
+            "Selected:",
             len(selected_contracts)
         )
 
 
 
-        # ---------------------------------
-        # Build Athena workspace context
-        # ---------------------------------
+        # --------------------------------
+        # Selected contracts take priority
+        # --------------------------------
 
         if selected_contracts:
 
-            print(
-                "Active contracts:"
-            )
 
-            for contract in selected_contracts:
+            context_results = [
 
-                print(
-                    "-",
-                    contract.get("sam_id"),
-                    contract.get("title")
-                )
+                {
+                    "contract": contract,
 
+                    "match_type":
+                        "selected_contract",
 
+                    "match":{
 
-        # ---------------------------------
-        # Determine what Athena should use
-        # ---------------------------------
+                        "matched_text":
+                        "User selected contract"
 
-        context_results = search_results
+                    }
 
+                }
 
-        # If user selected contracts,
-        # prioritize those over search results
+                for contract in selected_contracts
 
-        if selected_contracts:
-
-            context_results = selected_contracts
-
-
-
-        # ---------------------------------
-        # Generate response
-        # ---------------------------------
-
-        if context_results:
-
-
-            answer = answer_generator.generate(
-
-                query=message,
-
-                results=context_results,
-
-                selected_contracts=selected_contracts
-
-            )
-
-
-            print(
-                "LLM finished:",
-                time.time() - start
-            )
+            ]
 
 
         else:
 
 
-            answer = (
+            context_results = search_results
 
-                "I don't have any contract opportunities "
-                "in context yet. Try searching first, "
-                "then ask me about the results."
 
-            )
+
+
+        if not context_results:
+
+
+            return {
+
+
+                "answer":
+                "I don't have any contract opportunities in context yet. Try searching first.",
+
+
+                "citations":[],
+
+                "contracts":[]
+
+            }
+
+
+
+
+
+        answer = answer_generator.generate(
+
+
+            query=message,
+
+
+            results=context_results,
+
+            selected_contracts=selected_contracts,
+
+
+            conversation_history=session["messages"]
+
+
+        )
+
+
+
+        print(
+
+            "LLM finished:",
+
+            time.time() - start
+
+        )
+
 
 
 
@@ -133,46 +153,64 @@ class AthenaService:
 
 
             "contracts":
-                context_results
+                [
+
+                    item["contract"]
+
+                    for item in context_results
+
+                ]
 
         }
 
 
 
+
+
     def build_citations(
         self,
-        contracts
+        results
     ):
 
-        citations = []
+
+        citations=[]
 
 
-        for contract in contracts:
+        seen=set()
 
 
-            # Handles both:
-            # search result objects
-            # direct contract objects
 
-            if "contract" in contract:
+        for item in results:
 
-                contract = contract["contract"]
 
+            contract=item["contract"]
+
+
+            sam_id=contract.get(
+                "sam_id"
+            )
+
+
+            if sam_id in seen:
+
+                continue
+
+
+            seen.add(
+                sam_id
+            )
 
 
             citations.append({
 
                 "sam_id":
-                    contract.get("sam_id"),
-
+                    sam_id,
 
                 "title":
                     contract.get("title"),
 
-
                 "agency":
                     contract.get("agency"),
-
 
                 "url":
                     contract.get("url")
@@ -181,6 +219,8 @@ class AthenaService:
 
 
         return citations
+
+
 
 
 

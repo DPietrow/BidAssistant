@@ -20,22 +20,35 @@ function ContractCard({
     const [hover,setHover] = useState(false);
 
 
+
+    function handleSelect(){
+
+        onSelect(contract);
+
+    }
+
+
+
     return (
 
         <div
 
-            onClick={() =>
-                onSelect(contract)
-            }
+
+            onClick={handleSelect}
+
 
             style={{
 
+
                 position:"relative",
+
 
                 background:
                     selected
                     ? "#eff6ff"
                     : "white",
+
+
 
                 border:
                     selected
@@ -44,18 +57,28 @@ function ContractCard({
                         ? "2px solid #d1d5db"
                         : "2px solid transparent",
 
+
+
                 borderRadius:"14px",
+
 
                 padding:"20px",
 
+
                 cursor:"pointer",
 
+
+
                 transition:"all .18s ease",
+
+
 
                 transform:
                     hover
                     ? "translateY(-2px)"
                     : "translateY(0)",
+
+
 
                 boxShadow:
                     selected
@@ -64,23 +87,28 @@ function ContractCard({
                         ? "0 6px 14px rgba(0,0,0,.10)"
                         : "0 2px 8px rgba(0,0,0,.08)"
 
+
             }}
+
+
 
             onMouseEnter={() =>
                 setHover(true)
             }
 
+
+
             onMouseLeave={() =>
                 setHover(false)
             }
 
+
+
         >
 
 
-            {/* Selection Accent */}
 
             {
-
                 selected &&
 
                 <div
@@ -110,6 +138,8 @@ function ContractCard({
 
 
 
+
+
             {/* Header */}
 
             <div
@@ -128,6 +158,8 @@ function ContractCard({
 
             >
 
+
+
                 <h3
 
                     style={{
@@ -136,7 +168,9 @@ function ContractCard({
 
                         color:"#111827",
 
-                        fontSize:"1.15rem"
+                        fontSize:"1.15rem",
+
+                        paddingRight:"10px"
 
                     }}
 
@@ -145,6 +179,8 @@ function ContractCard({
                     {contract.title}
 
                 </h3>
+
+
 
 
                 {
@@ -161,7 +197,10 @@ function ContractCard({
 
                 }
 
+
+
             </div>
+
 
 
 
@@ -182,6 +221,8 @@ function ContractCard({
 
             >
 
+
+
                 <div>
 
                     <strong>
@@ -193,6 +234,9 @@ function ContractCard({
                     {contract.agency}
 
                 </div>
+
+
+
 
 
                 <div>
@@ -208,6 +252,9 @@ function ContractCard({
                 </div>
 
 
+
+
+
                 <div>
 
                     <strong>
@@ -216,17 +263,49 @@ function ContractCard({
 
                     {" "}
 
-                    {contract.naics}
+                    {contract.naics ?? "Not listed"}
 
                 </div>
+
+
 
             </div>
 
 
 
 
-            {
 
+            {
+                selected &&
+
+                <div
+
+                    style={{
+
+                        marginTop:"14px",
+
+                        color:"#2563eb",
+
+                        fontSize:".85rem",
+
+                        fontWeight:600
+
+                    }}
+
+                >
+
+                    Selected for Athena analysis
+
+                </div>
+
+            }
+
+
+
+
+
+
+            {
                 contract.url &&
 
                 <a
@@ -237,43 +316,60 @@ function ContractCard({
 
                     rel="noopener noreferrer"
 
+
                     onClick={
                         e =>
                         e.stopPropagation()
                     }
 
+
+
                     style={{
+
 
                         display:"inline-flex",
 
+
                         alignItems:"center",
+
 
                         gap:"6px",
 
+
                         marginTop:"18px",
+
 
                         color:"#2563eb",
 
+
                         textDecoration:"none",
 
+
                         fontWeight:500
+
 
                     }}
 
                 >
 
+
                     View Posting
 
+
                     <ExternalLink size={15}/>
+
 
                 </a>
 
             }
+
+
 
         </div>
 
     );
 
 }
+
 
 export default ContractCard;
