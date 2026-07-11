@@ -5,13 +5,9 @@ import {
     Filter
 } from "lucide-react";
 
-import {
-    askAthena
-} from "../../services/api";
+import {askAthena} from "../../services/api";
 
-import {
-    theme
-} from "../../theme";
+import {theme} from "../../theme";
 
 
 function SearchPanel({

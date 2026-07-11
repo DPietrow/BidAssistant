@@ -1,6 +1,8 @@
 import { useRef, useState, useEffect } from "react";
 import { Rnd } from "react-rnd";
 import { Send, X } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 
 function AthenaPanel({
@@ -14,23 +16,20 @@ function AthenaPanel({
 }) {
 
 
-    const [messages,setMessages] = useState([
+    const [messages, setMessages] = useState([
 
         {
-            role:"assistant",
+            role: "assistant",
             content:
-            "Hello, I'm Athena. Select a contract or ask me about procurement opportunities."
+                "Hello, I'm Athena. Select a contract or ask me about procurement opportunities."
         }
 
     ]);
 
 
+    const [input, setInput] = useState("");
 
-    const [input,setInput] = useState("");
-
-    const [loading,setLoading] = useState(false);
-
-    const [sessionId,setSessionId] = useState(null);
+    const [sessionId, setSessionId] = useState(null);
 
     const lastContextRef = useRef(null);
 
@@ -38,35 +37,36 @@ function AthenaPanel({
 
 
 
+    /*
+        Add context update message when contracts change
+    */
     useEffect(() => {
-        
 
-        if(
+
+        if (
             !selectedContracts ||
             selectedContracts.length === 0
-        ){
+        ) {
 
             return;
 
         }
-
 
 
         const contextKey =
             selectedContracts
-            .map(c => c.sam_id)
-            .join(",");
+                .map(c => c.sam_id)
+                .join(",");
 
 
 
-        if(
+        if (
             lastContextRef.current === contextKey
-        ){
+        ) {
 
             return;
 
         }
-
 
 
         lastContextRef.current = contextKey;
@@ -77,12 +77,10 @@ function AthenaPanel({
 
 
 
-        if(selectedContracts.length === 1){
+        if (selectedContracts.length === 1) {
 
 
-            const contract =
-                selectedContracts[0];
-
+            const contract = selectedContracts[0];
 
 
             message =
@@ -103,7 +101,6 @@ Ask me to summarize the opportunity, analyze risks, or evaluate bid potential.`;
 
         }
 
-
         else {
 
 
@@ -114,7 +111,6 @@ ${selectedContracts.length} contracts selected.
 
 I can compare these opportunities, analyze risks, identify the stronger bid candidate, or help prepare a proposal strategy.`;
 
-
         }
 
 
@@ -124,340 +120,481 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
             ...prev,
 
             {
-                role:"assistant",
-                content:message
+                role: "assistant",
+                content: message
             }
 
         ]);
 
 
 
-    },[selectedContracts]);
+    }, [selectedContracts]);
 
 
-    useEffect(()=>{
+
+
+
+    /*
+        Auto scroll
+    */
+    useEffect(() => {
+
 
         messagesEndRef.current?.scrollIntoView({
-            behavior:"smooth"
+
+            behavior: "smooth"
+
         });
 
-    },[messages]);
+
+    }, [messages]);
 
 
-   async function sendMessage() {
-
-    if (!input.trim()) return;
 
 
-    const currentMessage = input;
 
 
-    setMessages(prev => [
+    async function sendMessage() {
 
-        ...prev,
 
-        {
-            role:"user",
-            content:currentMessage
+        if (!input.trim()) {
+
+            return;
+
         }
 
-    ]);
 
 
-    setInput("");
-
-    setLoading(true);
+        const userMessage = input;
 
 
-
-    // Create assistant placeholder
-    const assistantIndex = messages.length + 1;
-
-
-    setMessages(prev => [
-
-        ...prev,
-
-        {
-            role:"assistant",
-            content:"",
-            streaming:true
-        }
-
-    ]);
+        setInput("");
 
 
 
-    try {
+        /*
+            Add user message
+        */
+        setMessages(prev => [
 
-
-        const response = await fetch(
-
-            "/athena/chat/stream",
+            ...prev,
 
             {
+                role: "user",
+                content: userMessage
+            },
 
-                method:"POST",
-
-                headers:{
-
-                    "Content-Type":
-                    "application/json"
-
-                },
-
-
-                body:JSON.stringify({
-
-                    session_id:
-                        sessionId,
-
-
-                    message:
-                        currentMessage,
-
-
-                    context:{
-
-                        searchResults:
-                            searchResults?.results ?? [],
-
-
-                        selectedContracts:
-                            selectedContracts ?? []
-
-                    }
-
-                })
-
+            {
+                role: "assistant",
+                content: "",
+                thinking: true,
+                streaming: false
             }
 
-        );
+        ]);
 
 
 
-        if(!response.ok){
-
-            throw new Error(
-                `Athena API error ${response.status}`
-            );
-
-        }
+        const assistantId =
+            crypto.randomUUID();
 
 
-
-        const reader =
-            response.body.getReader();
-
-
-
-        const decoder =
-            new TextDecoder();
-
-
-
-        let buffer = "";
 
         let completeText = "";
 
 
 
-        while(true){
+        try {
 
 
-            const {
-                done,
-                value
-            } =
-            await reader.read();
+            const response = await fetch(
 
+                "/athena/chat/stream",
 
-
-            if(done)
-                break;
-
-
-
-            buffer += decoder.decode(
-                value,
                 {
-                    stream:true
+
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body: JSON.stringify({
+
+                        session_id: sessionId,
+
+                        message: userMessage,
+
+                        context: {
+
+                            searchResults:
+                                searchResults?.results ?? [],
+
+
+                            selectedContracts:
+                                selectedContracts ?? []
+
+                        }
+
+                    })
+
                 }
+
             );
 
 
 
-            const events =
-                buffer.split(
-                    "\n\n"
+            if (!response.ok) {
+
+
+                throw new Error(
+
+                    `Athena API error ${response.status}`
+
+                );
+
+
+            }
+
+
+
+
+            const reader =
+                response.body.getReader();
+
+
+
+            const decoder =
+                new TextDecoder();
+
+
+
+            let buffer = "";
+
+
+
+
+            /*
+                Find the assistant placeholder index dynamically.
+
+                This avoids stale indexes when state updates.
+            */
+            const getAssistantIndex = () => {
+
+
+                let index = -1;
+
+
+                setMessages(current => {
+
+
+                    index =
+                        current.length - 1;
+
+
+                    return current;
+
+
+                });
+
+
+                return index;
+
+            };
+
+
+
+
+            while (true) {
+
+
+                const {
+                    done,
+                    value
+                } =
+                    await reader.read();
+
+
+
+                if (done) {
+
+                    break;
+
+                }
+
+
+
+                buffer += decoder.decode(
+
+                    value,
+
+                    {
+                        stream:true
+                    }
+
                 );
 
 
 
-            // Keep incomplete event
-            buffer =
-                events.pop();
+                const events =
+                    buffer.split("\n\n");
 
 
 
-            for(const event of events){
-
-
-                if(!event.startsWith("data:"))
-                    continue;
+                buffer =
+                    events.pop();
 
 
 
-                const json =
-                    JSON.parse(
-                        event.replace(
-                            "data:",
-                            ""
-                        )
-                    );
+
+                for (const event of events) {
 
 
 
-                //
-                // Streaming token
-                //
+                    if (!event.startsWith("data:")) {
 
-                if(
-                    json.type === "token"
-                ){
-                                        
-                    completeText +=
-                        json.content;
-
-
-
-                    setMessages(prev => {
-
-
-                        const updated =
-                            [...prev];
-
-
-                        updated[assistantIndex] = {
-
-                            role:"assistant",
-
-                            content: completeText,
-
-                            streaming: false
-
-                        };
-
-
-                        return updated;
-
-                    });
-
-
-                }
-
-
-
-                //
-                // Stream complete
-                //
-
-                if(
-                    json.type === "done"
-                ){
-
-                    if(json.session_id){
-
-                        setSessionId(
-                            json.session_id
-                        );
+                        continue;
 
                     }
 
-                }
+
+
+                    const json =
+                        JSON.parse(
+
+                            event.replace(
+                                "data:",
+                                ""
+                            )
+
+                        );
 
 
 
-                //
-                // Backend error
-                //
-
-                if(
-                    json.type === "error"
-                ){
-
-                    completeText =
-                        json.content;
 
 
-                    setMessages(prev => {
+                    /*
+                        First token:
+                        remove thinking state
+                    */
+                    if (json.type === "token") {
 
 
-                        const updated =
-                            [...prev];
+                        completeText += json.content;
 
 
-                        updated[assistantIndex] = {
 
-                            role:"assistant",
-
-                            content:
-                                completeText
-
-                        };
+                        setMessages(prev => {
 
 
-                        return updated;
+                            const updated =
+                                [...prev];
 
-                    });
+
+                            const index =
+                                updated.length - 1;
+
+
+
+                            updated[index] = {
+
+                                ...updated[index],
+
+                                content:
+                                    completeText,
+
+
+                                thinking:false,
+
+
+                                streaming:true
+
+                            };
+
+
+
+                            return updated;
+
+
+                        });
+
+
+
+                    }
+
+
+
+
+
+
+                    /*
+                        Finished
+                    */
+                    if (json.type === "done") {
+
+
+                        if (json.session_id) {
+
+
+                            setSessionId(
+
+                                json.session_id
+
+                            );
+
+
+                        }
+
+
+
+                        setMessages(prev => {
+
+
+                            const updated =
+                                [...prev];
+
+
+                            const index =
+                                updated.length - 1;
+
+
+
+                            updated[index] = {
+
+                                ...updated[index],
+
+                                streaming:false,
+
+                                thinking:false
+
+                            };
+
+
+
+                            return updated;
+
+
+                        });
+
+
+
+                    }
+
+
+
+
+
+                    /*
+                        Backend error
+                    */
+                    if (json.type === "error") {
+
+
+                        setMessages(prev => {
+
+
+                            const updated =
+                                [...prev];
+
+
+                            const index =
+                                updated.length - 1;
+
+
+
+                            updated[index] = {
+
+                                role:"assistant",
+
+                                content:
+                                    json.content,
+
+
+                                streaming:false,
+
+                                thinking:false
+
+                            };
+
+
+
+                            return updated;
+
+
+                        });
+
+
+                    }
+
 
                 }
 
 
             }
+
+
+
+        }
+
+
+        catch(error) {
+
+
+            console.error(
+
+                "Athena streaming error:",
+                error
+
+            );
+
+
+
+            setMessages(prev => {
+
+
+                const updated =
+                    [...prev];
+
+
+
+                const index =
+                    updated.length - 1;
+
+
+
+                updated[index] = {
+
+
+                    role:"assistant",
+
+
+                    content:
+                    "I encountered an error processing that request.",
+
+
+                    thinking:false,
+
+                    streaming:false
+
+
+                };
+
+
+
+                return updated;
+
+
+            });
 
 
         }
 
 
     }
-
-    catch(error){
-
-
-        console.error(
-            "Athena streaming error:",
-            error
-        );
-
-
-        setMessages(prev => [
-
-            ...prev,
-
-            {
-
-                role:"assistant",
-
-                content:
-                "I encountered an error processing that request."
-
-            }
-
-        ]);
-
-    }
-
-
-    finally {
-
-        setLoading(false);
-
-    }
-
-  }
-
-
+    
     return (
 
         <Rnd
@@ -465,7 +602,7 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
             default={{
 
                 x:
-                window.innerWidth - 450,
+                    window.innerWidth - 450,
 
                 y:120,
 
@@ -486,7 +623,9 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
 
             style={{
+
                 zIndex:1000
+
             }}
 
         >
@@ -618,6 +757,7 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
 
 
+
                 {/* Messages */}
 
                 <div
@@ -640,89 +780,197 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
 
                     {
+
                         messages.map((msg,index)=>(
-                        
-                        <div
-                            key={index}
-                            style={{
-                                marginBottom:"12px",
-                                textAlign:
-                                    msg.role==="user"
-                                    ?
-                                    "right"
-                                    :
-                                    "left"
-                            }}
-                        >
-                        
-                        <div
-                            style={{
-                                display:"inline-block",
-                                padding:"10px 14px",
-                                borderRadius:"12px",
-                                background:
-                                    msg.role==="user"
-                                    ?
-                                    "#2563eb"
-                                    :
-                                    "#e5e7eb",
-                                color:
-                                    msg.role==="user"
-                                    ?
-                                    "white"
-                                    :
-                                    "#111827"
-                            }}
-                        >
-                        
-                        {
-                        msg.streaming ?
-                        
-                        <div
-                            style={{
-                                display:"flex",
-                                alignItems:"center",
-                                gap:"10px",
-                                color:"#6b7280",
-                                fontSize:"14px"
-                            }}
-                        >
-                        
-                        <div className="athena-thinking-dots">
-                        
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        
-                        </div>
-                        
-                        
-                        <span>
-                        Athena is analyzing opportunities...
-                        </span>
-                        
-                        
-                        </div>
-                        
-                        :
-                        
-                        msg.content
-                        
-                        }
-                        
-                        
-                        </div>
-                        
-                        </div>
-                        
+
+
+                            <div
+
+                                key={index}
+
+                                style={{
+
+                                    marginBottom:"12px",
+
+                                    textAlign:
+
+                                        msg.role === "user"
+
+                                        ?
+
+                                        "right"
+
+                                        :
+
+                                        "left"
+
+                                }}
+
+                            >
+
+
+
+                                <div
+
+                                    style={{
+
+                                        display:"inline-block",
+
+                                        maxWidth:"90%",
+
+                                        padding:"10px 14px",
+
+                                        borderRadius:"12px",
+
+                                        background:
+
+                                            msg.role === "user"
+
+                                            ?
+
+                                            "#2563eb"
+
+                                            :
+
+                                            "#e5e7eb",
+
+                                        color:
+
+                                            msg.role === "user"
+
+                                            ?
+
+                                            "white"
+
+                                            :
+
+                                            "#111827"
+
+                                    }}
+
+                                >
+
+
+
+                                    {
+
+                                        msg.thinking
+
+                                        ?
+
+                                        (
+
+                                            <div
+
+                                                style={{
+
+                                                    display:"flex",
+
+                                                    alignItems:"center",
+
+                                                    gap:"10px",
+
+                                                    color:"#6b7280",
+
+                                                    fontSize:"14px"
+
+                                                }}
+
+                                            >
+
+
+                                                <div className="athena-thinking-dots">
+
+                                                    <span></span>
+
+                                                    <span></span>
+
+                                                    <span></span>
+
+                                                </div>
+
+
+                                                <span>
+                                                    Athena is analyzing opportunities...
+                                                </span>
+
+
+                                            </div>
+
+                                        )
+
+
+                                        :
+
+
+                                        (
+
+                                            <div className="athena-markdown">
+
+
+                                                <ReactMarkdown
+
+                                                    remarkPlugins={[remarkGfm]}
+
+                                                >
+
+                                                    {msg.content}
+
+                                                </ReactMarkdown>
+
+
+                                                {
+
+
+                                                    msg.streaming
+
+                                                    &&
+
+                                                    (
+
+                                                        <span
+
+                                                            className="athena-cursor"
+
+                                                        >
+
+                                                            ▌
+
+                                                        </span>
+
+                                                    )
+
+
+                                                }
+
+
+                                            </div>
+
+                                        )
+
+                                    }
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
                         ))
-                        }
+
+                    }
 
 
-                    
+
+                    <div ref={messagesEndRef}/>
+
 
                 </div>
-                <div ref={messagesEndRef}/>
+
+
 
 
 
@@ -750,17 +998,23 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
                         value={input}
 
                         onChange={
-                            e=>setInput(e.target.value)
+
+                            e => setInput(e.target.value)
+
                         }
 
 
                         onKeyDown={
 
-                            e=>{
+                            e => {
 
-                                if(e.key==="Enter")
+                                if(
+                                    e.key === "Enter"
+                                ) {
 
                                     sendMessage();
+
+                                }
 
                             }
 
@@ -778,12 +1032,14 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
                             borderRadius:"8px",
 
-                            border:"1px solid #ccc"
+                            border:
+                            "1px solid #ccc"
 
                         }}
 
 
                     />
+
 
 
                     <button
@@ -823,7 +1079,6 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
 
         </Rnd>
-
 
     );
 

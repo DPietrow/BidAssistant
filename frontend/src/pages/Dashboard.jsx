@@ -1,38 +1,58 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import SearchPanel from "../components/search/SearchPanel";
+import FilterPanel from "../components/search/FilterPanel";
 import ContractGrid from "../components/contracts/ContractGrid";
 import AthenaPanel from "../components/athena/AthenaPanel";
-
-import { Bot } from "lucide-react";
+import AthenaButton from "../components/athena/AthenaButton";
 
 import { theme } from "../theme";
+
 
 
 function Dashboard() {
 
 
-    // Entire response returned from /api/ask
+    // Search response from backend
     const [searchResponse, setSearchResponse] = useState(null);
 
 
+
+    // Athena visibility
     const [athenaOpen, setAthenaOpen] = useState(false);
 
 
-
-    // Multiple contracts selected for Athena
+    // Contracts selected for Athena
     const [selectedContracts, setSelectedContracts] = useState([]);
 
+    const [athenaNotify, setAthenaNotify] = useState(false);
+
+    const [filters,setFilters] = useState({
+
+        noticeType:"",
+        setAside:"",
+        minValue:"",
+        maxValue:"",
+        startDate:"",
+        endDate:""
+
+    });
 
 
 
-    function handleSearchResults(response){
+    function handleSearchResults(response) {
 
 
-        setSearchResponse(response);
+        setSearchResponse({
+
+            ...response,
+
+            filters
+
+        });
 
 
-        // New search clears Athena context
+        // Reset selected contracts on new search
         setSelectedContracts([]);
 
 
@@ -44,54 +64,36 @@ function Dashboard() {
 
     function handleContractSelected(contract){
 
-
         setSelectedContracts(prev => {
 
-
             const exists = prev.some(
-
-                item =>
-                item.sam_id === contract.sam_id
-
+                item => item.sam_id === contract.sam_id
             );
 
 
-
-            if(exists){
-
-
-                return prev.filter(
-
-                    item =>
-                    item.sam_id !== contract.sam_id
-
-                );
-
-
-            }
-
-
-
-            return [
-
+            return exists
+            ?
+            prev.filter(
+                item => item.sam_id !== contract.sam_id
+            )
+            :
+            [
                 ...prev,
-
                 contract
-
             ];
-
 
         });
 
 
+        // wake Athena
+        setAthenaNotify(true);
 
-        // Open Athena when selecting
-        setAthenaOpen(true);
 
+        setTimeout(()=>{
+            setAthenaNotify(false);
+        },1800);
 
     }
-
-
 
 
 
@@ -118,8 +120,8 @@ function Dashboard() {
 
 
 
-            {/* Header */}
 
+            {/* Header */}
 
             <div
 
@@ -183,8 +185,8 @@ function Dashboard() {
 
 
 
-            {/* Search */}
 
+            {/* Search */}
 
             <div
 
@@ -192,14 +194,14 @@ function Dashboard() {
 
                     background:"white",
 
-                    borderRadius:"12px",
+                    borderRadius:"16px",
 
                     padding:"24px",
 
                     marginBottom:"24px",
 
                     boxShadow:
-                    "0 2px 8px rgba(0,0,0,.08)"
+                    "0 4px 14px rgba(15,23,42,.08)"
 
                 }}
 
@@ -208,11 +210,32 @@ function Dashboard() {
 
                 <SearchPanel
 
-                    onResults={
-                        handleSearchResults
-                    }
+                    onResults={handleSearchResults}
+
+                    filters={filters}
 
                 />
+
+                   <FilterPanel
+
+                     filters={filters}
+                            
+                     setFilters={setFilters}
+                            
+                     onApply={() => {
+                        
+                         console.log(
+                             "Applying filters",
+                             filters
+                         );
+                        
+                         // later:
+                         // trigger backend search here
+                        
+                     }}
+                    
+                 />
+
 
 
             </div>
@@ -222,8 +245,8 @@ function Dashboard() {
 
 
 
-            {/* Results */}
 
+            {/* Contracts */}
 
             <div
 
@@ -267,17 +290,17 @@ function Dashboard() {
 
 
                     results={
-                        searchResponse?.results
+                            searchResponse?.results
+                        }
+                    
+                    filters={
+                        searchResponse?.filters
                     }
-
-
-
+                
                     selectedContracts={
                         selectedContracts
                     }
-
-
-
+                
                     onSelectContract={
                         handleContractSelected
                     }
@@ -295,84 +318,32 @@ function Dashboard() {
 
 
 
-            {/* Floating Athena Button */}
 
+            {/* Athena Launcher */}
 
-            <button
-
-
-                onClick={() =>
-                    setAthenaOpen(!athenaOpen)
-                }
-
-
-
-                style={{
-
-
-                    position:"fixed",
-
-
-                    right:"32px",
-
-
-                    bottom:"32px",
-
-
-                    width:"60px",
-
-
-                    height:"60px",
-
-
-                    borderRadius:"50%",
-
-
-                    border:"none",
-
-
-                    background:"#111827",
-
-
-                    color:"white",
-
-
-                    display:"flex",
-
-
-                    alignItems:"center",
-
-
-                    justifyContent:"center",
-
-
-                    cursor:"pointer",
-
-
-                    boxShadow:
-                    "0 4px 15px rgba(0,0,0,.25)"
-
-
+            <AthenaButton
+            
+                onClick={()=>{
+                    setAthenaOpen(!athenaOpen);
+                    setAthenaNotify(false);
                 }}
-
-
-            >
-
-
-                <Bot size={28}/>
-
-
-            </button>
-
-
+            
+                active={athenaOpen}
+            
+                notify={athenaNotify}
+            
+                count={selectedContracts.length}
+            
+            />
 
 
 
 
 
 
-            {/* Athena */}
 
+
+            {/* Athena Panel */}
 
             {
 
@@ -406,6 +377,8 @@ function Dashboard() {
 
 
 
+
+
         </div>
 
 
@@ -413,6 +386,7 @@ function Dashboard() {
 
 
 }
+
 
 
 export default Dashboard;

@@ -5,6 +5,8 @@ function ContractGrid({
 
     results,
 
+    filters,
+
     selectedContracts = [],
 
     onSelectContract
@@ -48,12 +50,16 @@ function ContractGrid({
         >
 
             {
-
                 results.map((item)=>{
 
 
                     const contract =
                         item.contract;
+
+
+                    if(!contract){
+                        return null;
+                    }
 
 
 
@@ -80,6 +86,12 @@ function ContractGrid({
 
                             contract={
                                 contract
+                            }
+
+
+
+                            filters={
+                                filters
                             }
 
 
