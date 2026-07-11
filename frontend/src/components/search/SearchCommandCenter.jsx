@@ -15,7 +15,9 @@ function SearchCommandCenter({
     setStatus,
     resultCount,
     searchIntent,
-    setSearchIntent
+    searchSummary,
+    setSearchIntent,
+    setSearchSummary
 
 }) {
 
@@ -67,7 +69,7 @@ function SearchCommandCenter({
 
             style={{
 
-                background:"#ffffff",
+                background:"#ffffff8e",
 
                 borderRadius:"18px",
 
@@ -199,22 +201,22 @@ function SearchCommandCenter({
                 <SearchPanel
 
                     onResults={(results)=>{
-                    
                         onResults(results);
-                    
                     }}
-                
                 
                     onSearchStart={(stage)=>{
-
                         setStatus(stage);
-
                     }}
                 
-                
                     filters={filters}
-
+                
                     searchIntent={searchIntent}
+                
+                    setSearchIntent={setSearchIntent}
+                
+                    setFilters={setFilters}
+                
+                    setSearchSummary={setSearchSummary}
                 
                 />
 
@@ -224,6 +226,8 @@ function SearchCommandCenter({
                 filters={filters}
 
                 setFilters={setFilters}
+
+                setSearchSummary={setSearchSummary}
 
             />
 
@@ -368,6 +372,8 @@ function SearchCommandCenter({
                     }
                 
                     resultCount={resultCount}
+
+                    searchSummary={searchSummary}
                 
                 />
 

@@ -20,11 +20,16 @@ function Dashboard() {
     const [backendComplete,setBackendComplete] = useState(false);
 
     const [athenaStatus,setAthenaStatus] = useState("idle");
+    
 
     // Athena visibility
     const [athenaOpen, setAthenaOpen] = useState(false);
 
+    const [showAthenaButton,setShowAthenaButton] = useState(true);
+
     const [searchIntent,setSearchIntent] = useState("");
+
+    const [searchSummary,setSearchSummary] = useState(null);
 
     // Contracts selected for Athena
     const [selectedContracts, setSelectedContracts] = useState([]);
@@ -239,6 +244,9 @@ function Dashboard() {
             
                 setSearchIntent={setSearchIntent}
             
+                searchSummary={searchSummary}
+            
+                setSearchSummary={setSearchSummary}
             />
 
 
@@ -322,33 +330,77 @@ function Dashboard() {
             }
 
 
-
-
-
-
-
             {/* Athena Launcher */}
 
+            {
+            showAthenaButton ?
+            
+            (
             <AthenaButton
             
-                onClick={()=>{
-                    setAthenaOpen(!athenaOpen);
-                    setAthenaNotify(false);
-                }}
+            onClick={()=>{
             
-                active={athenaOpen}
+                setAthenaOpen(!athenaOpen);
+                setAthenaNotify(false);
             
-                notify={athenaNotify}
-            
-                count={selectedContracts.length}
-            
+            }}
+
+            active={athenaOpen}
+
+            notify={athenaNotify}
+
+            count={selectedContracts.length}
+
+            onHide={() =>
+                setShowAthenaButton(false)
+            }
+
             />
+            )
 
+            :
 
+            (
+            
+            <button
+            
+            onClick={() =>
+                setShowAthenaButton(true)
+            }
 
+            style={{
+            
+                position:"fixed",
+            
+                right:"32px",
+            
+                top:"24px",
+            
+                zIndex:2000,
+            
+                borderRadius:"999px",
+            
+                padding:"10px 16px",
+            
+                background:"#111827",
+            
+                color:"white",
+            
+                border:"none",
+            
+                cursor:"pointer"
+            
+            }}
 
+            >
+            
+            Open Athena
 
+            </button>
 
+            )
+
+            }
 
 
             {/* Athena Panel */}

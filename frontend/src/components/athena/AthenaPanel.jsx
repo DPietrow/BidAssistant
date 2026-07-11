@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { Rnd } from "react-rnd";
-import { Send, X } from "lucide-react";
+import { Send, X,  Maximize2, Minimize2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -26,6 +26,15 @@ function AthenaPanel({
 
     ]);
 
+    const [maximized,setMaximized] = useState(false);
+
+
+    const previousSize = useRef({
+
+        width:420,
+        height:550
+
+    });
 
     const [input, setInput] = useState("");
 
@@ -195,10 +204,6 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
 
 
-        const assistantId =
-            crypto.randomUUID();
-
-
 
         let completeText = "";
 
@@ -273,39 +278,6 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
 
             let buffer = "";
-
-
-
-
-            /*
-                Find the assistant placeholder index dynamically.
-
-                This avoids stale indexes when state updates.
-            */
-            const getAssistantIndex = () => {
-
-
-                let index = -1;
-
-
-                setMessages(current => {
-
-
-                    index =
-                        current.length - 1;
-
-
-                    return current;
-
-
-                });
-
-
-                return index;
-
-            };
-
-
 
 
             while (true) {
@@ -594,40 +566,82 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
 
     }
-    
+
     return (
+
+    <div
+        style={{
+            position:"fixed",
+            inset:0,
+            pointerEvents:"none",
+            zIndex:3000
+        }}
+    >
+
+        <div
+            style={{
+                pointerEvents:"auto"
+            }}
+        >
 
         <Rnd
 
             default={{
-
-                x:
-                    window.innerWidth - 450,
-
-                y:120,
-
+                x: window.innerWidth - 470,
+                y:90,
                 width:420,
-
                 height:550
-
             }}
-
-
+        
+            size={
+                maximized
+                ?
+                {
+                    width: window.innerWidth - 80,
+                    height: window.innerHeight - 80
+                }
+                :
+                undefined
+            }
+        
+        
+            position={
+                maximized
+                ?
+                {
+                    x:40,
+                    y:40
+                }
+                :
+                undefined
+            }
+        
+        
+            onResizeStop={(e, direction, ref)=>{
+            
+                if(!maximized){
+                
+                    previousSize.current = {
+                    
+                        width: ref.offsetWidth,
+                    
+                        height: ref.offsetHeight
+                    
+                    };
+                
+                }
+            
+            }}
+        
+        
             minWidth={320}
-
+        
             minHeight={350}
-
+        
             bounds="window"
-
+        
             dragHandleClassName="athena-drag-handle"
-
-
-            style={{
-
-                zIndex:1000
-
-            }}
-
+        
         >
 
 
@@ -727,28 +741,88 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
 
 
-                    <button
+                    <div
+
+                        style={{
+                        
+                        display:"flex",
+                        
+                        gap:"8px"
+                        
+                        }}
+
+                        >
+                        
+
+                        <button
+
+                            onClick={()=>{
+                            
+                                if(maximized){
+                                
+                                    setMaximized(false);
+                                
+                                }
+                            
+                                else{
+                                
+                                    setMaximized(true);
+                                
+                                }
+                            
+                            }}
+
+                            style={{
+                                background:"transparent",
+                                border:"none",
+                                color:"white",
+                                cursor:"pointer"
+                            }}
+
+                        >
+                        
+                        {
+                        
+                        maximized
+                        
+                        ?
+                        
+                        <Minimize2 size={18}/>
+                        
+                        :
+                        
+                        <Maximize2 size={18}/>
+                        
+                        }
+
+                        </button>
+
+
+
+                        <button
 
                         onClick={onClose}
 
                         style={{
-
-                            background:"transparent",
-
-                            border:"none",
-
-                            color:"white",
-
-                            cursor:"pointer"
-
+                        
+                        background:"transparent",
+                        
+                        border:"none",
+                        
+                        color:"white",
+                        
+                        cursor:"pointer"
+                        
                         }}
 
-                    >
-
+                        >
+                        
                         <X size={18}/>
 
+                        </button>
 
-                    </button>
+
+                        </div>
 
 
                 </div>
@@ -1079,6 +1153,8 @@ I can compare these opportunities, analyze risks, identify the stronger bid cand
 
 
         </Rnd>
+        </div>
+    </div>
 
     );
 

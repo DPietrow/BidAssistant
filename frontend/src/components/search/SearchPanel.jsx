@@ -13,28 +13,19 @@ function SearchPanel({
     onResults,
     onSearchStart,
     searchIntent,
-    filters
+    setSearchIntent,
+    filters,
+    setFilters,
+    setSearchSummary
 }) {
 
+    const [query,setQuery] = useState("");
 
-    const [query,setQuery]
-    =
-    useState("");
+    const [agency,setAgency] = useState("");
 
+    const [naics,setNaics] = useState("");
 
-    const [agency,setAgency]
-    =
-    useState("");
-
-
-    const [naics,setNaics]
-    =
-    useState("");
-
-
-    const [loading,setLoading]
-    =
-    useState(false);
+    const [loading,setLoading] = useState(false);
 
     const [draftFilters, setDraftFilters] = useState(filters);
 
@@ -78,9 +69,39 @@ function SearchPanel({
                 (response)=>{
 
 
-                    onResults(
-                        response
+                    onResults(response);
+
+                    const completedSearchSummary = {
+                    
+                        intent: searchIntent,
+                    
+                        filters:{
+                            ...filters
+                        }
+                    
+                    };
+                    
+                    
+                    setSearchSummary(
+                        completedSearchSummary
                     );
+                    
+                    
+                    setQuery("");
+                    
+                    setSearchIntent("");
+                    
+                    
+                    setFilters({
+                    
+                        noticeType:"",
+                        setAside:"",
+                        minValue:"",
+                        maxValue:"",
+                        startDate:"",
+                        endDate:""
+                    
+                    });
 
 
                 }

@@ -3,7 +3,8 @@ import { Search, Sparkles, CheckCircle } from "lucide-react";
 
 function AthenaStatusBar({
     status,
-    resultCount
+    resultCount,
+    searchSummary
 }) {
 
 
@@ -27,7 +28,57 @@ function AthenaStatusBar({
 
         complete:{
             icon:<CheckCircle size={18}/>,
-            text:`Athena found ${resultCount ?? 0} matching opportunities`
+            text:
+                searchSummary
+                ?
+                (()=>{
+                
+                    const filters = [];
+                
+                    const f = searchSummary.filters;
+                
+                
+                    if(f.noticeType)
+                        filters.push(f.noticeType);
+                
+                
+                    if(f.setAside)
+                        filters.push(f.setAside);
+                
+                
+                    if(f.minValue)
+                        filters.push(
+                            `Min $${Number(f.minValue).toLocaleString()}`
+                        );
+                    
+                    
+                    if(f.maxValue)
+                        filters.push(
+                            `Max $${Number(f.maxValue).toLocaleString()}`
+                        );
+                    
+                    
+                    if(f.startDate && f.endDate)
+                        filters.push(
+                            `${f.startDate} → ${f.endDate}`
+                        );
+                    
+                    
+                    return `Athena found ${
+                        resultCount ?? 0
+                    } matching opportunities based on "${
+                        searchSummary.intent || "your search criteria"
+                    }"${
+                        filters.length
+                        ?
+                        ` with ${filters.join(", ")}`
+                        :
+                        ""
+                    }`;
+                
+                })()
+                :
+                `Athena found ${resultCount ?? 0} matching opportunities`
         }
 
     };
