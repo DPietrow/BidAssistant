@@ -64,6 +64,10 @@ def athena_search_stream():
         ""
     )
 
+    intent = data.get(
+        "intent",
+        ""
+    )
 
     filters = data.get("filters") or {}
 
@@ -114,7 +118,8 @@ def athena_search_stream():
 
         response = search_service.search(
             query=query,
-            filters=filters
+            filters=filters,
+            intent=intent
         )
 
 

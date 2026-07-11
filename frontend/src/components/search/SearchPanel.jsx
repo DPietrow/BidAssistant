@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
     Search,
@@ -12,6 +12,7 @@ import {theme} from "../../theme";
 function SearchPanel({
     onResults,
     onSearchStart,
+    searchIntent,
     filters
 }) {
 
@@ -35,7 +36,7 @@ function SearchPanel({
     =
     useState(false);
 
-
+    const [draftFilters, setDraftFilters] = useState(filters);
 
     async function handleSearch(){
 
@@ -59,6 +60,7 @@ function SearchPanel({
                 {
                     agency,
                     naics,
+                    intent: searchIntent,
                     ...filters
                 },
 
@@ -109,7 +111,9 @@ function SearchPanel({
 
     }
 
-
+    useEffect(() => {
+        setDraftFilters(filters);
+    }, [filters]);
 
     return (
 

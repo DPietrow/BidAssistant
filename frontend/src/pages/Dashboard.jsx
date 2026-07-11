@@ -56,11 +56,6 @@ function Dashboard() {
 
         });
 
-        console.log(
-            "FINAL ATHENA RESPONSE",
-            response
-        );
-
         setBackendComplete(true);
 
         setSelectedContracts([]);

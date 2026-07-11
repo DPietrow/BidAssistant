@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SlidersHorizontal } from "lucide-react";
 
 
@@ -12,6 +12,16 @@ function FilterPanel({
 
 
     const [open,setOpen] = useState(false);
+
+    const [draftFilters,setDraftFilters] = useState(
+        filters
+    );
+
+    useEffect(() => {
+
+        setDraftFilters(filters);
+
+    }, [filters]);
 
     const activeFilterCount = Object.entries(filters)
     .filter(([key,value]) => {
@@ -44,7 +54,7 @@ function FilterPanel({
                 <SlidersHorizontal size={18}/>
             
                 <span>
-                    Advanced Filters
+                    Refine Search
                 </span>
             
             
@@ -85,12 +95,12 @@ function FilterPanel({
 
                         <select
 
-                            value={filters.noticeType}
+                            value={draftFilters.noticeType}
 
                             onChange={
                                 e =>
-                                setFilters({
-                                    ...filters,
+                                setDraftFilters({
+                                    ...draftFilters,
                                     noticeType:e.target.value
                                 })
                             }
@@ -133,12 +143,12 @@ function FilterPanel({
 
                         <select
 
-                            value={filters.setAside}
+                            value={draftFilters.setAside}
 
                             onChange={
                                 e =>
-                                setFilters({
-                                    ...filters,
+                                setDraftFilters({
+                                    ...draftFilters,
                                     setAside:e.target.value
                                 })
                             }
@@ -189,12 +199,12 @@ function FilterPanel({
 
                                 type="number"
 
-                                value={filters.minValue}
+                                value={draftFilters.minValue}
 
                                 onChange={
                                     e =>
-                                    setFilters({
-                                        ...filters,
+                                    setDraftFilters({
+                                        ...draftFilters,
                                         minValue:e.target.value
                                     })
                                 }
@@ -209,12 +219,12 @@ function FilterPanel({
 
                                 type="number"
 
-                                value={filters.maxValue}
+                                value={draftFilters.maxValue}
 
                                 onChange={
                                     e =>
-                                    setFilters({
-                                        ...filters,
+                                    setDraftFilters({
+                                        ...draftFilters,
                                         maxValue:e.target.value
                                     })
                                 }
@@ -250,12 +260,12 @@ function FilterPanel({
 
                                 type="date"
 
-                                value={filters.startDate}
+                                value={draftFilters.startDate}
 
                                 onChange={
                                     e =>
-                                    setFilters({
-                                        ...filters,
+                                    setDraftFilters({
+                                        ...draftFilters,
                                         startDate:e.target.value
                                     })
                                 }
@@ -268,12 +278,12 @@ function FilterPanel({
 
                                 type="date"
 
-                                value={filters.endDate}
+                                value={draftFilters.endDate}
 
                                 onChange={
                                     e =>
-                                    setFilters({
-                                        ...filters,
+                                    setDraftFilters({
+                                        ...draftFilters,
                                         endDate:e.target.value
                                     })
                                 }
@@ -300,7 +310,9 @@ function FilterPanel({
 
                     onClick={() => {
 
-                        onApply();
+                        setFilters(draftFilters);
+
+                        onApply?.();
                                         
                         setOpen(false);
                                         

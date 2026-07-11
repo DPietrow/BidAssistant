@@ -30,6 +30,7 @@ class SearchService:
         self,
         query,
         filters=None,
+        intent=None,
         limit=10
     ):
         start = time.time()
@@ -185,6 +186,7 @@ class SearchService:
         response = cross_encoder_ranker.rerank(
             query=query,
             results=response,
+            intent=intent,
             top_k=5
         )
         print(

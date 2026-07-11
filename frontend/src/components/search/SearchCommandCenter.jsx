@@ -130,51 +130,71 @@ function SearchCommandCenter({
 
             {/* Search Intent */}
 
-            <div
-
-                style={{
-
-                    marginBottom:"22px"
-
-                }}
-
-            >
-
-
-                <input
-
-                    value={searchIntent}
-
-                    onChange={
-                        e =>
-                        setSearchIntent(e.target.value)
-                    }
-
-
-                    placeholder="Example: Find cybersecurity contracts for small businesses under $5M"
-
+                <div
 
                     style={{
-
-                        width:"100%",
-
-                        padding:"14px 16px",
-
-                        borderRadius:"12px",
-
-                        border:"1px solid #cbd5e1",
-
-                        fontSize:"16px",
-
-                        outline:"none"
-
+                    
+                        marginBottom:"22px"
+                    
                     }}
+                
+                >
+                
+                
+                    <label
 
+                        style={{
+                        
+                            display:"block",
+                        
+                            fontWeight:700,
+                        
+                            color:"#1e293b",
+                        
+                            marginBottom:"8px"
+                        
+                        }}
+                    
+                    >
+                    
+                        Athena Mission Brief
+                    
+                    </label>                
+                    
+                    <input
+                        value={searchIntent}
+                        onChange={e => setSearchIntent(e.target.value)}
+                        placeholder="Mission Brief (optional): Find HVAC filter supply contracts..."
+                        style={{
+                            width:"100%",
+                            height:"46px",
+                            padding:"0 16px",
+                            borderRadius:"10px",
+                            border:"1px solid #cbd5e1",
+                            fontSize:"15px"
+                        }}
+                    />
+            
+                    <div
 
-                />
-
-
-            </div>
+                        style={{
+                        
+                            marginTop:"8px",
+                        
+                            fontSize:"13px",
+                        
+                            color:"#64748b"
+                        
+                        }}
+                    
+                    >
+                    
+                        Athena uses this context to prioritize relevant contract opportunities.
+                    
+                    </div>
+                    
+                    
+                </div>
 
                 <SearchPanel
 
@@ -193,6 +213,8 @@ function SearchCommandCenter({
                 
                 
                     filters={filters}
+
+                    searchIntent={searchIntent}
                 
                 />
 

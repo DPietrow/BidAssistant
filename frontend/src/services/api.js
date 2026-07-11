@@ -47,14 +47,7 @@ export async function streamAthenaSearch(
     onStatus,
     onComplete
 ){
-    console.log(
-                    "ATHENA REQUEST",
-                    {
-                        query,
-                        filters
-                    }
-                )
-                
+
     const response =
         await fetch(
 
