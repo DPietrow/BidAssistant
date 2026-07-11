@@ -15,7 +15,11 @@ function Dashboard() {
     // Search response from backend
     const [searchResponse, setSearchResponse] = useState(null);
 
-    const [athenaStatus,setAthenaStatus] = useState(null);
+    const [pendingResponse, setPendingResponse] = useState(null);
+
+    const [backendComplete,setBackendComplete] = useState(false);
+
+    const [athenaStatus,setAthenaStatus] = useState("idle");
 
     // Athena visibility
     const [athenaOpen, setAthenaOpen] = useState(false);
@@ -41,20 +45,26 @@ function Dashboard() {
 
 
     function handleSearchResults(response) {
-    
-        
-    
-        setSearchResponse({
-        
+
+         // Hold results until Athena finishes ranking
+
+        setPendingResponse({
+
             ...response,
-        
+
             filters
-        
+
         });
-    
-    
+
+        console.log(
+            "FINAL ATHENA RESPONSE",
+            response
+        );
+
+        setBackendComplete(true);
+
         setSelectedContracts([]);
-     
+
     }
 
 
@@ -91,6 +101,38 @@ function Dashboard() {
 
     }
 
+    useEffect(()=>{
+
+
+        if(
+            backendComplete &&
+            pendingResponse &&
+            athenaStatus === "ranking"
+        ){
+
+
+            setAthenaStatus("complete");
+
+
+            setSearchResponse(
+                pendingResponse
+            );
+
+
+            setPendingResponse(null);
+
+
+            setBackendComplete(false);
+
+
+        }
+
+
+    },[
+        backendComplete,
+        pendingResponse,
+        athenaStatus
+    ]);
 
 
     return (
@@ -211,7 +253,7 @@ function Dashboard() {
             searchResponse?.results?.length > 0 &&
             
             <div
-            
+
                 key={
                     searchResponse?.results?.length
                 }

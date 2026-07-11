@@ -893,6 +893,8 @@ color:#64748b;
 }
 
 
+
+
 @keyframes contractSlideDown {
 
     from {
@@ -922,6 +924,21 @@ color:#64748b;
 
 }
 
+@keyframes pulse {
+
+    0% {
+        opacity:.3;
+    }
+
+    50% {
+        opacity:1;
+    }
+
+    100% {
+        opacity:.3;
+    }
+
+}
 
 * {
     box-sizing: border-box;

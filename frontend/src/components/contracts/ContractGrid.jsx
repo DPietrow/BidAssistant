@@ -14,7 +14,10 @@ function ContractGrid({
 }) {
 
 
-    if(!results || results.length === 0){
+    if(
+        !results ||
+        results.length === 0
+    ){
 
         return (
 
@@ -29,6 +32,8 @@ function ContractGrid({
         );
 
     }
+
+
 
 
 
@@ -49,70 +54,97 @@ function ContractGrid({
 
         >
 
+
             {
-                results.map((item)=>{
+
+            results.map((item,index)=>{
 
 
-                    const contract =
-                        item.contract;
-
-
-                    if(!contract){
-                        return null;
-                    }
-
-
-
-                    const isSelected =
-                        selectedContracts.some(
-
-                            selected =>
-                            selected.sam_id === contract.sam_id
-
-                        );
+                //
+                // Support both:
+                //
+                // Old:
+                // { contract:{...} }
+                //
+                // New:
+                // {...contract}
+                //
+                const contract =
+                    item.contract ?? item;
 
 
 
-                    return (
+                if(!contract){
 
-                        <ContractCard
+                    return null;
 
-
-                            key={
-                                contract.sam_id
-                            }
+                }
 
 
 
-                            contract={
-                                contract
-                            }
+                const isSelected =
+                    selectedContracts.some(
 
-
-
-                            filters={
-                                filters
-                            }
-
-
-
-                            selected={
-                                isSelected
-                            }
-
-
-
-                            onSelect={
-                                onSelectContract
-                            }
-
-
-                        />
+                        selected =>
+                        selected.sam_id === contract.sam_id
 
                     );
 
 
-                })
+
+
+                return (
+
+                    <ContractCard
+
+
+                        key={
+
+                            contract.sam_id
+                            ??
+                            index
+
+                        }
+
+
+
+                        contract={
+
+                            contract
+
+                        }
+
+
+
+                        filters={
+
+                            filters
+
+                        }
+
+
+
+                        selected={
+
+                            isSelected
+
+                        }
+
+
+
+                        onSelect={
+
+                            onSelectContract
+
+                        }
+
+
+                    />
+
+                );
+
+
+            })
 
             }
 
@@ -120,6 +152,7 @@ function ContractGrid({
         </div>
 
     );
+
 
 }
 

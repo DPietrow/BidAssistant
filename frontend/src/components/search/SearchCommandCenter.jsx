@@ -3,6 +3,7 @@ import { useState } from "react";
 import SearchPanel from "./SearchPanel";
 import FilterPanel from "./FilterPanel";
 import AthenaStatusBar from "../athena/AthenaStatusBar";
+import AthenaAnalysisProgress from "../athena/AthenaAnalysisProgress";
 
 
 function SearchCommandCenter({
@@ -175,36 +176,25 @@ function SearchCommandCenter({
 
             </div>
 
-            <SearchPanel
-            
-                onResults={(results)=>{
-                
-                    // Search finished, Athena starts ranking
-                    setStatus("analyzing");
-                
-                    onResults(results);
-                
-                
-                    setTimeout(()=>{
+                <SearchPanel
+
+                    onResults={(results)=>{
                     
-                        setStatus("complete");
+                        onResults(results);
                     
-                    },1500);
+                    }}
                 
                 
-                }}
-            
-            
-                onSearchStart={()=>{
+                    onSearchStart={(stage)=>{
+
+                        setStatus(stage);
+
+                    }}
                 
-                    setStatus("searching");
                 
-                }}
-            
-            
-                filters={filters}
-            
-            />
+                    filters={filters}
+                
+                />
 
 
             <FilterPanel
@@ -342,12 +332,21 @@ function SearchCommandCenter({
 
             >
 
+                <AthenaAnalysisProgress
+
+                    status={status}                            
+                />
+
                 <AthenaStatusBar
 
-                    status={status}
-
+                    status={
+                        status === "complete"
+                        ? status
+                        : null
+                    }
+                
                     resultCount={resultCount}
-
+                
                 />
 
             </div>

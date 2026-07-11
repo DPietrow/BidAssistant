@@ -4,8 +4,7 @@ import {
     Search,
     Filter
 } from "lucide-react";
-
-import {askAthena} from "../../services/api";
+import {streamAthenaSearch} from "../../services/api";
 
 import {theme} from "../../theme";
 
@@ -42,45 +41,54 @@ function SearchPanel({
 
 
         if(!query){
-
             return;
-
         }
 
 
         setLoading(true);
 
 
-        try {
-                if(onSearchStart){
 
-                    onSearchStart();
+        try{
+
+
+            await streamAthenaSearch(
+                
+                query,
+
+                {
+                    agency,
+                    naics,
+                    ...filters
+                },
+
+                (stage)=>{
+
+                    if(onSearchStart){
+
+                        onSearchStart(stage);
+
+                    }
+
+                },
+                
+
+                (response)=>{
+
+
+                    onResults(
+                        response
+                    );
+
 
                 }
 
-            const response =
-                await askAthena(
 
-                    query,
-
-                    {
-                        agency:
-                            agency || null,
-
-                        naics:
-                            naics || null
-                    }
-
-                );
-
-
-
-            onResults(
-                response
             );
 
 
         }
+
 
         catch(error){
 

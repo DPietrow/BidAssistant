@@ -30,7 +30,10 @@ def create_app():
     # Register Blueprints
     app.register_blueprint(contracts_bp)
     app.register_blueprint(ingestion_bp)
-    app.register_blueprint(search_bp)
+    app.register_blueprint(
+        search_bp,
+        url_prefix="/api/search"
+    )   
     app.register_blueprint(embedding_bp)
     app.register_blueprint(ask_bp)
     app.register_blueprint(athena_bp)
