@@ -11,7 +11,9 @@ import {theme} from "../../theme";
 
 
 function SearchPanel({
-    onResults
+    onResults,
+    onSearchStart,
+    filters
 }) {
 
 
@@ -50,7 +52,11 @@ function SearchPanel({
 
 
         try {
+                if(onSearchStart){
 
+                    onSearchStart();
+
+                }
 
             const response =
                 await askAthena(

@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 
-import SearchPanel from "../components/search/SearchPanel";
-import FilterPanel from "../components/search/FilterPanel";
 import ContractGrid from "../components/contracts/ContractGrid";
 import AthenaPanel from "../components/athena/AthenaPanel";
 import AthenaButton from "../components/athena/AthenaButton";
+import SearchCommandCenter from "../components/search/SearchCommandCenter";
 
 import { theme } from "../theme";
 
@@ -16,11 +15,12 @@ function Dashboard() {
     // Search response from backend
     const [searchResponse, setSearchResponse] = useState(null);
 
-
+    const [athenaStatus,setAthenaStatus] = useState(null);
 
     // Athena visibility
     const [athenaOpen, setAthenaOpen] = useState(false);
 
+    const [searchIntent,setSearchIntent] = useState("");
 
     // Contracts selected for Athena
     const [selectedContracts, setSelectedContracts] = useState([]);
@@ -41,25 +41,21 @@ function Dashboard() {
 
 
     function handleSearchResults(response) {
-
-
+    
+        
+    
         setSearchResponse({
-
+        
             ...response,
-
+        
             filters
-
+        
         });
-
-
-        // Reset selected contracts on new search
+    
+    
         setSelectedContracts([]);
-
-
+     
     }
-
-
-
 
 
     function handleContractSelected(contract){
@@ -139,43 +135,41 @@ function Dashboard() {
 
             >
 
-
-                <div>
-
-
+                <div
+                    style={{
+                        width: "100%",
+                        textAlign: "center",
+                        marginBottom: "45px"
+                    }}
+                >
+                
                     <h1
-
                         style={{
-
-                            color:theme.text,
-
-                            marginBottom:"8px"
-
+                            color: theme.text,
+                            margin: "0 0 16px",
+                            fontSize: "42px",
+                            fontWeight: 700,
+                            letterSpacing: "-1px"
                         }}
-
                     >
-
-                        Athena Bid Intelligence
-
+                        Athena AI Procurement Intelligence
                     </h1>
-
-
-
+                    
+                    
                     <p
-
                         style={{
-
-                            color:theme.mutedText
-
+                            color: theme.mutedText,
+                            fontSize: "18px",
+                            maxWidth: "720px",
+                            margin: "24px auto 0",
+                            lineHeight: "1.6"
                         }}
-
                     >
-
-                        Search and analyze government contracting opportunities
-
+                        Discover, analyze, and prioritize government contract opportunities
+                        with AI-powered intelligence.
                     </p>
-
-
+                    
+                    
                 </div>
 
 
@@ -188,80 +182,57 @@ function Dashboard() {
 
             {/* Search */}
 
-            <div
+            <SearchCommandCenter
 
-                style={{
+                filters={filters}
 
-                    background:"white",
+                setFilters={setFilters}
 
-                    borderRadius:"16px",
+                onResults={handleSearchResults}
 
-                    padding:"24px",
+                status={athenaStatus}
 
-                    marginBottom:"24px",
+                setStatus={setAthenaStatus}
 
-                    boxShadow:
-                    "0 4px 14px rgba(15,23,42,.08)"
-
-                }}
-
-            >
-
-
-                <SearchPanel
-
-                    onResults={handleSearchResults}
-
-                    filters={filters}
-
-                />
-
-                   <FilterPanel
-
-                     filters={filters}
-                            
-                     setFilters={setFilters}
-                            
-                     onApply={() => {
-                        
-                         console.log(
-                             "Applying filters",
-                             filters
-                         );
-                        
-                         // later:
-                         // trigger backend search here
-                        
-                     }}
-                    
-                 />
-
-
-
-            </div>
-
-
-
-
-
+                resultCount={
+                    searchResponse?.results?.length
+                }
+            
+                searchIntent={searchIntent}
+            
+                setSearchIntent={setSearchIntent}
+            
+            />
 
 
             {/* Contracts */}
 
+            {
+            searchResponse?.results?.length > 0 &&
+            
             <div
+            
+                key={
+                    searchResponse?.results?.length
+                }
 
+                className="contract-section-enter"
+            
                 style={{
-
-                    background:"white",
-
-                    borderRadius:"12px",
-
-                    padding:"24px",
-
-                    minHeight:"300px"
-
+                
+                    background:theme.panel,
+                
+                    borderRadius:"16px",
+                
+                    padding:"28px",
+                
+                    marginTop:"32px",
+                
+                    boxShadow:
+                        theme.shadow
+                
                 }}
-
+            
             >
 
 
@@ -311,7 +282,7 @@ function Dashboard() {
 
 
             </div>
-
+            }
 
 
 

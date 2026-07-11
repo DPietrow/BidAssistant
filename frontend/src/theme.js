@@ -1,20 +1,20 @@
 export const theme = {
 
-    background: "#f5f7fb",
+    background: "#f1f5f9d8",
 
-    panel: "#ffffff",
+    panel: "#ffffff8e",
 
-    border: "#e5e7eb",
+    border: "#e2e8f0",
 
-    text: "#111827",
+    text: "#0f172a",
 
-    mutedText: "#6b7280",
+    mutedText: "#64748b",
 
     primary: "#2563eb",
 
-    athena: "#111827",
+    athena: "#0f172a",
 
     shadow:
-        "0 2px 8px rgba(0,0,0,.08)"
+        "0 4px 14px rgba(15,23,42,.08)"
 
 };

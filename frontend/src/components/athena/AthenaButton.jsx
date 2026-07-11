@@ -32,7 +32,12 @@ className="athena-icon"
 
 {
 count > 0 &&
-<span className="athena-badge">
+<span
+    style={{
+        fontWeight:700,
+        color:"#1e3a8a"
+     }}
+>
 {count}
 </span>
 }

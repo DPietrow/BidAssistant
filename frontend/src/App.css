@@ -294,9 +294,9 @@
 
     position:fixed;
 
-    right:45px;
+    right:32px;
 
-    bottom:45px;
+    top:24px;
 
     width:100px;
 
@@ -783,6 +783,51 @@
 
 }
 
+.athena-button.searching .athena-icon {
+    animation:
+        athenaScan 1.5s infinite ease-in-out;
+
+    filter:
+        drop-shadow(
+            0 0 20px rgba(37,99,235,.9)
+        );
+}
+
+.contract-card {
+    animation: cardEnter .3s ease forwards;
+}
+
+
+@keyframes cardEnter {
+
+    from {
+        opacity:0;
+        transform:translateY(12px);
+    }
+
+    to {
+        opacity:1;
+        transform:translateY(0);
+    }
+
+}
+
+@keyframes athenaScan {
+
+    0% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-5px) rotate(3deg);
+    }
+
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+}
+
 @keyframes athenaPulse {
 
     0%,
@@ -807,3 +852,78 @@
     }
 
 }
+
+
+.metric-card {
+
+background:#f8fafc;
+
+border:1px solid #e2e8f0;
+
+border-radius:14px;
+
+padding:16px;
+
+text-align:center;
+
+}
+
+
+.metric-card h3 {
+
+margin:0;
+
+font-size:24px;
+
+color:#111827;
+
+}
+
+
+.metric-card span {
+
+font-size:13px;
+
+color:#64748b;
+
+}
+
+.contract-section-enter {
+    animation: contractSlideDown 0.45s ease-out forwards;
+}
+
+
+@keyframes contractSlideDown {
+
+    from {
+        opacity:0;
+        transform:translateY(-20px);
+    }
+
+
+    to {
+        opacity:1;
+        transform:translateY(0);
+    }
+
+}
+
+@keyframes fadeIn {
+
+    from {
+        opacity:0;
+        transform:translateY(-5px);
+    }
+
+    to {
+        opacity:1;
+        transform:translateY(0);
+    }
+
+}
+
+
+* {
+    box-sizing: border-box;
+}
+
