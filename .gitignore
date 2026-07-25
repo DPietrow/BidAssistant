@@ -1,3 +1,7 @@
 backend/__pycache__
 backend/.venv
 backend/.env
+backend/routes/__pycache__
+backend/services/__pycache__
+backend/services/retrieval/__pycache__
+
