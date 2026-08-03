@@ -1,142 +1,203 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-import ContractGrid from "../components/contracts/ContractGrid";
-import AthenaPanel from "../components/athena/AthenaPanel";
-import AthenaButton from "../components/athena/AthenaButton";
-import SearchCommandCenter from "../components/search/SearchCommandCenter";
+import Navbar from "../components/navigation/Navbar";
+
+import OpportunitiesPage from "../components/opportunities/OpportunitiesPage";
+import Projects from "./Projects";
+import Workspace from "./Workspace";
 
 import { theme } from "../theme";
-
 
 
 function Dashboard() {
 
 
-    // Search response from backend
-    const [searchResponse, setSearchResponse] = useState(null);
+    const [activePage, setActivePage] = useState(()=>{
 
-    const [pendingResponse, setPendingResponse] = useState(null);
-
-    const [backendComplete,setBackendComplete] = useState(false);
-
-    const [athenaStatus,setAthenaStatus] = useState("idle");
-    
-
-    // Athena visibility
-    const [athenaOpen, setAthenaOpen] = useState(false);
-
-    const [showAthenaButton,setShowAthenaButton] = useState(true);
-
-    const [searchIntent,setSearchIntent] = useState("");
-
-    const [searchSummary,setSearchSummary] = useState(null);
-
-    // Contracts selected for Athena
-    const [selectedContracts, setSelectedContracts] = useState([]);
-
-    const [athenaNotify, setAthenaNotify] = useState(false);
-
-    const [filters,setFilters] = useState({
-
-        noticeType:"",
-        setAside:"",
-        minValue:"",
-        maxValue:"",
-        startDate:"",
-        endDate:""
+        return localStorage.getItem("athena_active_page")
+            ||
+            "opportunities";
 
     });
 
 
-
-    function handleSearchResults(response) {
-
-         // Hold results until Athena finishes ranking
-
-        setPendingResponse({
-
-            ...response,
-
-            filters
-
-        });
-
-        setBackendComplete(true);
-
-        setSelectedContracts([]);
-
-    }
+    const [selectedProject, setSelectedProject] = useState(null);
 
 
-    function handleContractSelected(contract){
 
-        setSelectedContracts(prev => {
+    // Temporary project database
+    // Later this becomes your backend/database
 
-            const exists = prev.some(
-                item => item.sam_id === contract.sam_id
-            );
-
-
-            return exists
+    const defaultProjects = [
+    
+        {
+            id:1,
+            name:"VA Medical Center HVAC",
+            description:
+                "Preventive maintenance and HVAC modernization proposal.",
+            documents:3,
+            updated:"2 hours ago"
+        },
+    
+        {
+            id:2,
+            name:"NASA Facilities Support",
+            description:
+                "Operations and maintenance services for NASA facilities.",
+            documents:5,
+            updated:"Yesterday"
+        },
+    
+        {
+            id:3,
+            name:"Army Barracks Renovation",
+            description:
+                "Renovation and facility improvement proposal.",
+            documents:2,
+            updated:"Last week"
+        }
+    
+    ];
+    
+    
+    
+    const [projects, setProjects] = useState(()=>{
+    
+        const saved = localStorage.getItem("athena_projects");
+    
+    
+        return saved
+    
             ?
-            prev.filter(
-                item => item.sam_id !== contract.sam_id
-            )
+    
+            JSON.parse(saved)
+    
             :
-            [
-                ...prev,
-                contract
-            ];
-
-        });
+    
+            defaultProjects;
+    
+    });
 
 
-        // wake Athena
-        setAthenaNotify(true);
+    function persistProjects(updatedProjects){
 
+        setProjects(updatedProjects);
 
-        setTimeout(()=>{
-            setAthenaNotify(false);
-        },1800);
+        localStorage.setItem(
+            "athena_projects",
+            JSON.stringify(updatedProjects)
+        );
 
     }
 
-    useEffect(()=>{
+    function navigate(page){
+
+        setActivePage(page);
+
+        localStorage.setItem(
+            "athena_active_page",
+            page
+        );
 
 
-        if(
-            backendComplete &&
-            pendingResponse &&
-            athenaStatus === "ranking"
-        ){
+        if(page !== "projects"){
 
-
-            setAthenaStatus("complete");
-
-
-            setSearchResponse(
-                pendingResponse
-            );
-
-
-            setPendingResponse(null);
-
-
-            setBackendComplete(false);
-
+            setSelectedProject(null);
 
         }
 
+    }
 
-    },[
-        backendComplete,
-        pendingResponse,
-        athenaStatus
-    ]);
+
+    function createProject(){
+
+
+        const newProject = {
+
+            id:crypto.randomUUID(),
+
+            name:"Untitled Project",
+
+            description:
+                "New Athena AI workspace.",
+
+            documents:0,
+
+            updated:"Just now",
+
+            saved:false
+
+        };
+
+
+        setSelectedProject(newProject);
+
+    }
+
+    function saveProject(updatedProject){
+    
+    
+        const projectToSave = {
+        
+            ...updatedProject,
+        
+            saved:true
+        
+        };
+    
+    
+        const exists = projects.some(
+        
+            project => project.id === projectToSave.id
+        
+        );
+    
+    
+        let updatedProjects;
+    
+    
+        if(exists){
+        
+        
+            updatedProjects = projects.map(project =>
+            
+                project.id === projectToSave.id
+            
+                    ? projectToSave
+            
+                    : project
+            
+            );
+        
+        
+        }
+    
+        else{
+        
+        
+            updatedProjects = [
+            
+                ...projects,
+            
+                projectToSave
+            
+            ];
+        
+        }
+    
+    
+    
+        persistProjects(updatedProjects);
+    
+    
+        setSelectedProject(projectToSave);
+    
+    
+    }
+
 
 
     return (
-
 
         <div
 
@@ -157,296 +218,95 @@ function Dashboard() {
         >
 
 
+            <Navbar
 
+                activePage={activePage}
 
-            {/* Header */}
+                onNavigate={navigate}
 
-            <div
-
-                style={{
-
-                    display:"flex",
-
-                    justifyContent:"space-between",
-
-                    alignItems:"center",
-
-                    marginBottom:"30px"
-
-                }}
-
-            >
-
-                <div
-                    style={{
-                        width: "100%",
-                        textAlign: "center",
-                        marginBottom: "45px"
-                    }}
-                >
-                
-                    <h1
-                        style={{
-                            color: theme.text,
-                            margin: "0 0 16px",
-                            fontSize: "42px",
-                            fontWeight: 700,
-                            letterSpacing: "-1px"
-                        }}
-                    >
-                        Athena AI Procurement Intelligence
-                    </h1>
-                    
-                    
-                    <p
-                        style={{
-                            color: theme.mutedText,
-                            fontSize: "18px",
-                            maxWidth: "720px",
-                            margin: "24px auto 0",
-                            lineHeight: "1.6"
-                        }}
-                    >
-                        Discover, analyze, and prioritize government contract opportunities
-                        with AI-powered intelligence.
-                    </p>
-                    
-                    
-                </div>
-
-
-            </div>
-
-
-
-
-
-
-            {/* Search */}
-
-            <SearchCommandCenter
-
-                filters={filters}
-
-                setFilters={setFilters}
-
-                onResults={handleSearchResults}
-
-                status={athenaStatus}
-
-                setStatus={setAthenaStatus}
-
-                resultCount={
-                    searchResponse?.results?.length
-                }
-            
-                searchIntent={searchIntent}
-            
-                setSearchIntent={setSearchIntent}
-            
-                searchSummary={searchSummary}
-            
-                setSearchSummary={setSearchSummary}
             />
 
 
-            {/* Contracts */}
 
             {
-            searchResponse?.results?.length > 0 &&
-            
-            <div
+                activePage === "opportunities" &&
 
-                key={
-                    searchResponse?.results?.length
-                }
+                <OpportunitiesPage />
 
-                className="contract-section-enter"
-            
-                style={{
+            }
+
+
+
+
+            {
+                activePage === "projects" &&
+
+                !selectedProject &&
+
+                <Projects
+
+                    projects={projects}
+
+                    onCreateProject={createProject}
+
+                    onOpenProject={(project)=>
+                    
+                        setSelectedProject(project)
+                    
+                    }
                 
-                    background:theme.panel,
+                    onDeleteProject={(projectId)=>{
+                    
+                    
+                        const updatedProjects = projects.filter(
+                        
+                            project => project.id !== projectId
+                        
+                        );
+                    
+                    
+                        persistProjects(updatedProjects);
+                    
+                    
+                    }}
                 
-                    borderRadius:"16px",
-                
-                    padding:"28px",
-                
-                    marginTop:"32px",
-                
-                    boxShadow:
-                        theme.shadow
-                
-                }}
-            
-            >
+                />
+
+            }
 
 
 
-                <h2
 
-                    style={{
+            {
+                activePage === "projects" &&
 
-                        color:theme.text,
+                selectedProject &&
 
-                        marginBottom:"18px"
+                <Workspace
+
+                    project={selectedProject}
+
+
+                    onBack={()=>{
+
+                        setSelectedProject(null);
 
                     }}
 
-                >
 
-                    Contract Opportunities
-
-                </h2>
-
-
-
-
-
-                <ContractGrid
-
-
-                    results={
-                            searchResponse?.results
-                        }
-                    
-                    filters={
-                        searchResponse?.filters
-                    }
-                
-                    selectedContracts={
-                        selectedContracts
-                    }
-                
-                    onSelectContract={
-                        handleContractSelected
-                    }
-
+                    onSaveProject={saveProject}
 
                 />
 
-
-
-            </div>
             }
-
-
-            {/* Athena Launcher */}
-
-            {
-            showAthenaButton ?
-            
-            (
-            <AthenaButton
-            
-            onClick={()=>{
-            
-                setAthenaOpen(!athenaOpen);
-                setAthenaNotify(false);
-            
-            }}
-
-            active={athenaOpen}
-
-            notify={athenaNotify}
-
-            count={selectedContracts.length}
-
-            onHide={() =>
-                setShowAthenaButton(false)
-            }
-
-            />
-            )
-
-            :
-
-            (
-            
-            <button
-            
-            onClick={() =>
-                setShowAthenaButton(true)
-            }
-
-            style={{
-            
-                position:"fixed",
-            
-                right:"32px",
-            
-                top:"24px",
-            
-                zIndex:2000,
-            
-                borderRadius:"999px",
-            
-                padding:"10px 16px",
-            
-                background:"#111827",
-            
-                color:"white",
-            
-                border:"none",
-            
-                cursor:"pointer"
-            
-            }}
-
-            >
-            
-            Open Athena
-
-            </button>
-
-            )
-
-            }
-
-
-            {/* Athena Panel */}
-
-            {
-
-                athenaOpen &&
-
-
-                <AthenaPanel
-
-
-                    onClose={() =>
-                        setAthenaOpen(false)
-                    }
-
-
-
-                    searchResults={
-                        searchResponse
-                    }
-
-
-
-                    selectedContracts={
-                        selectedContracts
-                    }
-
-
-                />
-
-
-            }
-
-
 
 
 
         </div>
 
-
     );
 
-
 }
-
 
 
 export default Dashboard;
